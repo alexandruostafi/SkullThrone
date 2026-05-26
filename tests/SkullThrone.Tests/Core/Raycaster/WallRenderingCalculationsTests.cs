@@ -49,21 +49,19 @@ public sealed class WallRenderingCalculationsTests
 
     [Theory]
     [InlineData(float.NaN)]
-    [InlineData(float.PositiveInfinity)]
     [InlineData(float.NegativeInfinity)]
-    public void CalculateLineHeight_SpecialFloats_ReturnsScreenHeight(float perpDist)
+    public void CalculateLineHeight_NaNOrNegativeInfinity_ReturnsScreenHeight(float perpDist)
     {
-        // NaN and Infinity are not valid distances — should be treated as invalid
-        int height = WallRenderingCalculations.CalculateLineHeight(perpDist);
-        // NaN and NegativeInfinity → ScreenHeight (guard catches them)
-        // PositiveInfinity → (int)(200 / ∞) = 0, which is acceptable (wall invisible at infinite distance)
-        Assert.True(height >= 0);
+        // NaN: !(NaN > 0) is true → guard returns ScreenHeight
+        // -∞: !(-∞ > 0) is true → guard returns ScreenHeight
+        Assert.Equal(DdaRaycaster.ScreenHeight, WallRenderingCalculations.CalculateLineHeight(perpDist));
     }
 
     [Fact]
-    public void CalculateLineHeight_NaN_ReturnsScreenHeight()
+    public void CalculateLineHeight_PositiveInfinity_ReturnsZero()
     {
-        Assert.Equal(DdaRaycaster.ScreenHeight, WallRenderingCalculations.CalculateLineHeight(float.NaN));
+        // +∞ > 0 is true, so guard does NOT catch it → (int)(200 / ∞) = 0
+        Assert.Equal(0, WallRenderingCalculations.CalculateLineHeight(float.PositiveInfinity));
     }
 
     [Fact]
@@ -171,8 +169,8 @@ public sealed class WallRenderingCalculationsTests
     [Fact]
     public void CalculateDrawEnd_LineHeight199_ReturnsBoundaryValue()
     {
-        // lineHeight=199 → drawEnd = 99 + 100 = 199 → clamped to 199
-        Assert.Equal(DdaRaycaster.ScreenHeight - 1, WallRenderingCalculations.CalculateDrawEnd(199));
+        // lineHeight=199 → drawEnd = 99 + 100 = 199 (not clamped, naturally at max valid pixel)
+        Assert.Equal(199, WallRenderingCalculations.CalculateDrawEnd(199));
     }
 
     #endregion
