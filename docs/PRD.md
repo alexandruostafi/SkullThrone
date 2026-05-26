@@ -121,18 +121,19 @@ Planned for post-1.0. Not in scope for initial release.
 
 **One complete level** with all systems functional:
 
-- [x] Raycasting engine rendering walls, floors, ceilings
-- [x] Player movement + jumping + vertical look
-- [x] Collision detection with wall sliding
-- [x] Map editor producing JSON levels
-- [x] Pick-ups: skulls, ammo, health
-- [x] Chainsword (melee weapon)
-- [x] Bolt pistol (ranged weapon)
-- [x] Blood Rage power-up
-- [x] Enemies: Imperial Guard + Loyalist Astartes
-- [x] Enemy AI (patrol, detect, chase, attack)
-- [x] DOOM-style HUD
-- [x] Game states: Menu → Playing → Paused → Game Over
+- [ ] Raycasting engine rendering walls, floors, ceilings
+- [ ] Player movement + jumping + vertical look
+- [ ] Collision detection with wall sliding
+- [ ] Map editor producing JSON levels
+- [ ] Pick-ups: skulls, ammo, health
+- [ ] Chainsword (melee weapon)
+- [ ] Bolt pistol (ranged weapon)
+- [ ] Blood Rage power-up
+- [ ] Invincibility power-up
+- [ ] Enemies: Imperial Guard + Loyalist Astartes
+- [ ] Enemy AI (patrol, detect, chase, attack)
+- [ ] DOOM-style HUD
+- [ ] Game states: Menu → Playing → Paused → Game Over
 - [ ] Audio (deferred — silent for v1.0)
 - [ ] Multiple levels (post-1.0)
 - [ ] Procedural generation (post-1.0)
@@ -144,7 +145,7 @@ Planned for post-1.0. Not in scope for initial release.
 
 | # | Milestone | Deliverables |
 |---|-----------|-------------|
-| 1 | Playable Level | Raycasting engine, player movement, collision, map editor, one test map |
+| 1 | Playable Level | Raycasting engine, player movement, collision, hand-written JSON map, one test map |
 | 2 | Combat (Melee) | Skull/ammo/health pick-ups, chainsword weapon, Blood Rage |
 | 3 | Combat (Ranged) | Bolt pistol, ammo system |
 | 4 | Enemies | Imperial Guard AI, Loyalist Astartes AI, full combat loop |
