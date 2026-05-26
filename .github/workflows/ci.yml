@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  commitlint:
+    name: commitlint
+    runs-on: windows-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install commitlint
+        run: npm install --save-dev @commitlint/cli @commitlint/config-conventional
+
+      - name: Validate commits
+        run: |
+          if ("${{ github.event_name }}" -eq "pull_request") {
+            npx commitlint --config .github/commitlint.config.js --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+          } else {
+            npx commitlint --config .github/commitlint.config.js --from HEAD~1 --to HEAD --verbose
+          }
+
+  branchlint:
+    name: branchlint
+    runs-on: windows-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate branch name
+        run: |
+          $branch = "${{ github.head_ref || github.ref_name }}"
+          $pattern = '^(main|feat-[a-z0-9-]+|fix-[a-z0-9-]+|chore-[a-z0-9-]+|refactor-[a-z0-9-]+|test-[a-z0-9-]+)$'
+          if ($branch -notmatch $pattern) {
+            Write-Warning "Branch name '$branch' does not match pattern: $pattern"
+            Write-Warning "Valid prefixes: feat-, fix-, chore-, refactor-, test-"
+            exit 1
+          } else {
+            Write-Host "Branch name '$branch' is valid."
+          }
+
+  build-and-test:
+    name: build-and-test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release /p:TreatWarningsAsErrors=true
+
+      - name: Test
+        run: dotnet test --no-build --configuration Release
+
+  release:
+    name: release
+    runs-on: windows-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install semantic-release
+        run: npm install semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/github
+
+      - name: Run semantic-release
+        run: npx semantic-release --extends ./.github/.releaserc.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
