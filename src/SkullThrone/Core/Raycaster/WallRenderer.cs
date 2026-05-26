@@ -41,26 +41,10 @@ public sealed class WallRenderer
             if (hit.TextureId == 0)
                 continue;
 
-            // Calculate wall strip height
-            int lineHeight = (int)(DdaRaycaster.ScreenHeight / hit.PerpDistance);
-
-            int drawStart = -lineHeight / 2 + DdaRaycaster.ScreenHeight / 2;
-            if (drawStart < 0) drawStart = 0;
-
-            int drawEnd = lineHeight / 2 + DdaRaycaster.ScreenHeight / 2;
-            if (drawEnd >= DdaRaycaster.ScreenHeight) drawEnd = DdaRaycaster.ScreenHeight - 1;
-
-            // Pick color, darken horizontal sides for depth perception
-            int colorIndex = hit.TextureId < _wallColors.Length ? hit.TextureId : 1;
-            Color color = _wallColors[colorIndex];
-
-            if (!hit.IsVerticalSide)
-            {
-                color = new Color(
-                    (byte)(color.R * 0.6f),
-                    (byte)(color.G * 0.6f),
-                    (byte)(color.B * 0.6f));
-            }
+            int lineHeight = WallRenderingCalculations.CalculateLineHeight(hit.PerpDistance);
+            int drawStart = WallRenderingCalculations.CalculateDrawStart(lineHeight);
+            int drawEnd = WallRenderingCalculations.CalculateDrawEnd(lineHeight);
+            Color color = WallRenderingCalculations.GetWallColor(hit.TextureId, hit.IsVerticalSide, _wallColors);
 
             spriteBatch.Draw(
                 _pixel,
