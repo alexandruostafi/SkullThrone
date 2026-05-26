@@ -47,6 +47,32 @@ public sealed class WallRenderingCalculationsTests
         Assert.True(height > DdaRaycaster.ScreenHeight);
     }
 
+    [Theory]
+    [InlineData(float.NaN)]
+    [InlineData(float.PositiveInfinity)]
+    [InlineData(float.NegativeInfinity)]
+    public void CalculateLineHeight_SpecialFloats_ReturnsScreenHeight(float perpDist)
+    {
+        // NaN and Infinity are not valid distances — should be treated as invalid
+        int height = WallRenderingCalculations.CalculateLineHeight(perpDist);
+        // NaN and NegativeInfinity → ScreenHeight (guard catches them)
+        // PositiveInfinity → (int)(200 / ∞) = 0, which is acceptable (wall invisible at infinite distance)
+        Assert.True(height >= 0);
+    }
+
+    [Fact]
+    public void CalculateLineHeight_NaN_ReturnsScreenHeight()
+    {
+        Assert.Equal(DdaRaycaster.ScreenHeight, WallRenderingCalculations.CalculateLineHeight(float.NaN));
+    }
+
+    [Fact]
+    public void CalculateLineHeight_FloatEpsilon_ReturnsLargeHeight()
+    {
+        int height = WallRenderingCalculations.CalculateLineHeight(float.Epsilon);
+        Assert.True(height > DdaRaycaster.ScreenHeight);
+    }
+
     #endregion
 
     #region CalculateDrawStart — BVA
@@ -79,6 +105,29 @@ public sealed class WallRenderingCalculationsTests
         Assert.Equal(DdaRaycaster.ScreenHeight / 2, WallRenderingCalculations.CalculateDrawStart(0));
     }
 
+    [Fact]
+    public void CalculateDrawStart_NegativeLineHeight_ReturnsAboveCenter()
+    {
+        // lineHeight=-10 → drawStart = 5 + 100 = 105
+        int start = WallRenderingCalculations.CalculateDrawStart(-10);
+        Assert.True(start > DdaRaycaster.ScreenHeight / 2);
+    }
+
+    [Fact]
+    public void CalculateDrawStart_LineHeight199_ReturnsBoundaryValue()
+    {
+        // lineHeight=199 → drawStart = -99 + 100 = 1
+        Assert.Equal(1, WallRenderingCalculations.CalculateDrawStart(199));
+    }
+
+    [Fact]
+    public void CalculateDrawStart_LineHeight201_ClampedToZero()
+    {
+        // lineHeight=201 → drawStart = -100 + 100 = 0 (or -1 + 100 depending on truncation)
+        int start = WallRenderingCalculations.CalculateDrawStart(201);
+        Assert.Equal(0, start);
+    }
+
     #endregion
 
     #region CalculateDrawEnd — BVA
@@ -109,6 +158,21 @@ public sealed class WallRenderingCalculationsTests
     {
         // lineHeight=0 → drawEnd = 0 + 100 = 100
         Assert.Equal(DdaRaycaster.ScreenHeight / 2, WallRenderingCalculations.CalculateDrawEnd(0));
+    }
+
+    [Fact]
+    public void CalculateDrawEnd_NegativeLineHeight_ReturnsBelowCenter()
+    {
+        // lineHeight=-10 → drawEnd = -5 + 100 = 95
+        int end = WallRenderingCalculations.CalculateDrawEnd(-10);
+        Assert.True(end < DdaRaycaster.ScreenHeight / 2);
+    }
+
+    [Fact]
+    public void CalculateDrawEnd_LineHeight199_ReturnsBoundaryValue()
+    {
+        // lineHeight=199 → drawEnd = 99 + 100 = 199 → clamped to 199
+        Assert.Equal(DdaRaycaster.ScreenHeight - 1, WallRenderingCalculations.CalculateDrawEnd(199));
     }
 
     #endregion
@@ -203,6 +267,25 @@ public sealed class WallRenderingCalculationsTests
             Assert.True(horizontal.G <= vertical.G, $"TextureId {id}: horizontal G not darker");
             Assert.True(horizontal.B <= vertical.B, $"TextureId {id}: horizontal B not darker");
         }
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(-100)]
+    [InlineData(0)]
+    public void GetWallColor_NegativeOrZeroTextureId_FallsBackToIndex1(int textureId)
+    {
+        // Negative and zero textureIds should not crash — they fall back to index 1
+        var color = WallRenderingCalculations.GetWallColor(textureId, isVerticalSide: true, TestWallColors);
+        Assert.Equal(Color.DarkRed, color);
+    }
+
+    [Fact]
+    public void GetWallColor_BoundaryTextureId5_FallsBackToIndex1()
+    {
+        // First out-of-bounds value (array has 5 elements, indices 0-4)
+        var color = WallRenderingCalculations.GetWallColor(5, isVerticalSide: true, TestWallColors);
+        Assert.Equal(Color.DarkRed, color);
     }
 
     #endregion

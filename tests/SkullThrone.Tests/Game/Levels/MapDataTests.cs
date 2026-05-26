@@ -154,7 +154,7 @@ public sealed class MapDataTests
     [Fact]
     public void Constructor_ZeroDimensions_EmptyTiles_Succeeds()
     {
-        // Documents current behavior: 0x0 map with empty array passes validation
+        // 0x0 map with empty array passes validation (zero is non-negative)
         var map = new MapData(0, 0, []);
         Assert.Equal(0, map.Width);
         Assert.Equal(0, map.Height);
@@ -168,6 +168,16 @@ public sealed class MapDataTests
         // Any coordinate is out-of-bounds on a 0x0 map
         Assert.Equal(1, map.GetTile(0, 0));
         Assert.Equal(1, map.GetTile(-1, -1));
+    }
+
+    [Theory]
+    [InlineData(-1, 1)]
+    [InlineData(1, -1)]
+    [InlineData(-1, -1)]
+    [InlineData(-100, 5)]
+    public void Constructor_NegativeDimensions_ThrowsArgumentOutOfRangeException(int width, int height)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new MapData(width, height, new int[1]));
     }
 
     #endregion

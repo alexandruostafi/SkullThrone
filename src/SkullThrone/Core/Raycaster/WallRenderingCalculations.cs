@@ -13,7 +13,7 @@ public static class WallRenderingCalculations
     /// </summary>
     public static int CalculateLineHeight(float perpDistance)
     {
-        if (perpDistance <= 0f)
+        if (!(perpDistance > 0f))
             return DdaRaycaster.ScreenHeight;
 
         return (int)(DdaRaycaster.ScreenHeight / perpDistance);
@@ -43,7 +43,7 @@ public static class WallRenderingCalculations
     /// </summary>
     public static Color GetWallColor(int textureId, bool isVerticalSide, ReadOnlySpan<Color> wallColors)
     {
-        int colorIndex = textureId < wallColors.Length ? textureId : 1;
+        int colorIndex = (textureId > 0 && textureId < wallColors.Length) ? textureId : 1;
         Color color = wallColors[colorIndex];
 
         if (!isVerticalSide)
