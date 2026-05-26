@@ -18,7 +18,7 @@ public sealed class SkullThroneGame : XnaGame
     public const int LogicalHeight = 200;
 
     private const float MoveSpeed = 3f;
-    private const float RotateSpeed = 2.5f;
+    private const float MouseSensitivity = 0.003f;
 
     private readonly GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch = null!;
@@ -28,12 +28,13 @@ public sealed class SkullThroneGame : XnaGame
     private WallRenderer _wallRenderer = null!;
     private MapData _map = null!;
     private Player _player = null!;
+    private int _lastMouseX;
 
     public SkullThroneGame()
     {
         _graphics = new GraphicsDeviceManager(this);
         Content.RootDirectory = "Content";
-        IsMouseVisible = true;
+        IsMouseVisible = false;
         Window.AllowUserResizing = true;
     }
 
@@ -65,11 +66,12 @@ public sealed class SkullThroneGame : XnaGame
         if (keyState.IsKeyDown(Keys.Escape))
             Exit();
 
-        // Rotation
-        if (keyState.IsKeyDown(Keys.Left))
-            _player.Angle -= RotateSpeed * deltaTime;
-        if (keyState.IsKeyDown(Keys.Right))
-            _player.Angle += RotateSpeed * deltaTime;
+        // Mouse look
+        var mouseState = Mouse.GetState();
+        int centerX = _graphics.PreferredBackBufferWidth / 2;
+        int mouseDeltaX = mouseState.X - centerX;
+        _player.Angle += mouseDeltaX * MouseSensitivity;
+        Mouse.SetPosition(centerX, _graphics.PreferredBackBufferHeight / 2);
 
         // Movement
         float moveX = 0f;
