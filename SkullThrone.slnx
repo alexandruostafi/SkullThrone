@@ -1,3 +1,9 @@
 <Solution>
-  <Project Path="SkullThrone.csproj" />
+  <Folder Name="/src/">
+    <Project Path="src/SkullThrone.MapEditor/SkullThrone.MapEditor.csproj" />
+    <Project Path="src/SkullThrone/SkullThrone.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SkullThrone.Tests/SkullThrone.Tests.csproj" />
+  </Folder>
 </Solution>

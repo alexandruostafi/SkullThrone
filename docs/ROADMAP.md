@@ -11,7 +11,7 @@
 
 ## Milestone 1 — Playable Level
 
-The player can move through a rendered level in first-person with collision detection.
+The player can move through a rendered level in first-person with collision detection. Maps are hand-written JSON files; the visual map editor comes in Milestone 5.
 
 | Version | Feature | Branch Example |
 |---------|---------|----------------|

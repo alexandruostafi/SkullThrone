@@ -15,6 +15,7 @@ The player is a betrayed World Eater tearing through loyalist Astartes and Imper
 - First-person perspective
 - Melee + ranged weapons (chainsword, bolt pistol, more later)
 - Blood Rage power-up (timed instant-kill melee)
+- Invincibility power-up (timed no-damage)
 - DOOM-style HUD (health, ammo, skull score)
 - Pick-ups: skulls (score/bragging rights), ammunition, health
 
