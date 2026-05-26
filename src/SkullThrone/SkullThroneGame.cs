@@ -22,13 +22,11 @@ public sealed class SkullThroneGame : XnaGame
 
     private readonly GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch = null!;
-    private RenderTarget2D _renderTarget = null!;
 
     private DdaRaycaster _raycaster = null!;
     private WallRenderer _wallRenderer = null!;
     private MapData _map = null!;
     private Player _player = null!;
-    private int _lastMouseX;
 
     public SkullThroneGame()
     {
@@ -54,7 +52,6 @@ public sealed class SkullThroneGame : XnaGame
     protected override void LoadContent()
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-        _renderTarget = new RenderTarget2D(GraphicsDevice, LogicalWidth, LogicalHeight);
         _wallRenderer = new WallRenderer(GraphicsDevice);
     }
 
@@ -106,30 +103,19 @@ public sealed class SkullThroneGame : XnaGame
         if (_map.GetTile((int)_player.X, (int)(_player.Y + moveY)) == 0)
             _player.Y += moveY;
 
+        // Cast rays (computation, not rendering)
+        _raycaster.CastAllRays(_player.X, _player.Y, _player.Angle, _map.Tiles, _map.Width, _map.Height);
+
         base.Update(gameTime);
     }
 
     protected override void Draw(GameTime gameTime)
     {
-        // Cast rays
-        _raycaster.CastAllRays(_player.X, _player.Y, _player.Angle, _map.Tiles, _map.Width, _map.Height);
-
-        // Draw game at logical resolution
-        GraphicsDevice.SetRenderTarget(_renderTarget);
-        GraphicsDevice.Clear(Color.Black);
-
-        _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
-        _wallRenderer.DrawFloorCeiling(_spriteBatch);
-        _wallRenderer.Draw(_spriteBatch, _raycaster.HitBuffer);
-        _spriteBatch.End();
-
-        // Scale to window
-        GraphicsDevice.SetRenderTarget(null);
         GraphicsDevice.Clear(Color.Black);
 
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
         var destinationRect = CalculateLetterboxRect();
-        _spriteBatch.Draw(_renderTarget, destinationRect, Color.White);
+        _wallRenderer.Draw(_spriteBatch, _raycaster.HitBuffer, destinationRect);
         _spriteBatch.End();
 
         base.Draw(gameTime);

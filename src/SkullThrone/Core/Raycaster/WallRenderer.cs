@@ -8,15 +8,22 @@ using Microsoft.Xna.Framework.Graphics;
 /// Renders wall strips to the screen based on raycaster hit results.
 /// Uses a single-pixel texture for solid-color rendering (v0.2.0).
 /// </summary>
-public sealed class WallRenderer
+public sealed class WallRenderer : IDisposable
 {
     private readonly Texture2D _pixel;
     private readonly Color[] _wallColors;
 
+    private static readonly Color CeilingColor = new(20, 12, 12);
+    private static readonly Color FloorColor = new(40, 30, 30);
+
+    /// <summary>
+    /// Initializes the wall renderer, generating procedural textures and pre-computing
+    /// darkened variants for EW-facing wall sides.
+    /// </summary>
     public WallRenderer(GraphicsDevice graphicsDevice)
     {
-        _pixel = new Texture2D(graphicsDevice, 1, 1);
-        _pixel.SetData([Color.White]);
+        _framebuffer = new Color[DdaRaycaster.ScreenWidth * DdaRaycaster.ScreenHeight];
+        _framebufferTexture = new Texture2D(graphicsDevice, DdaRaycaster.ScreenWidth, DdaRaycaster.ScreenHeight);
 
         // Wall colors indexed by texture ID (0 = unused, 1+ = wall types)
         _wallColors =
@@ -32,7 +39,23 @@ public sealed class WallRenderer
     /// <summary>
     /// Draws wall columns from the raycaster hit buffer.
     /// </summary>
-    public void Draw(SpriteBatch spriteBatch, ReadOnlySpan<RayHit> hitBuffer)
+    public void Draw(SpriteBatch spriteBatch, ReadOnlySpan<RayHit> hitBuffer, Rectangle destinationRect)
+    {
+        RenderToFramebuffer(hitBuffer);
+
+        _framebufferTexture.SetData(_framebuffer);
+        spriteBatch.Draw(
+            _framebufferTexture,
+            destinationRect,
+            Color.White);
+    }
+
+    public void Dispose()
+    {
+        _framebufferTexture.Dispose();
+    }
+
+    private void RenderToFramebuffer(ReadOnlySpan<RayHit> hitBuffer)
     {
         for (int column = 0; column < DdaRaycaster.ScreenWidth; column++)
         {
@@ -51,23 +74,5 @@ public sealed class WallRenderer
                 new Rectangle(column, drawStart, 1, drawEnd - drawStart),
                 color);
         }
-    }
-
-    /// <summary>
-    /// Draws floor and ceiling as solid colors.
-    /// </summary>
-    public void DrawFloorCeiling(SpriteBatch spriteBatch)
-    {
-        // Ceiling
-        spriteBatch.Draw(
-            _pixel,
-            new Rectangle(0, 0, DdaRaycaster.ScreenWidth, DdaRaycaster.ScreenHeight / 2),
-            new Color(20, 12, 12));
-
-        // Floor
-        spriteBatch.Draw(
-            _pixel,
-            new Rectangle(0, DdaRaycaster.ScreenHeight / 2, DdaRaycaster.ScreenWidth, DdaRaycaster.ScreenHeight / 2),
-            new Color(40, 30, 30));
     }
 }
