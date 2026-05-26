@@ -88,7 +88,7 @@ jobs:
           node-version: '20'
 
       - name: Install semantic-release
-        run: npm install semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/github
+        run: npm install semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/github conventional-changelog-conventionalcommits
 
       - name: Run semantic-release
         run: npx semantic-release --extends ./.github/.releaserc.json
