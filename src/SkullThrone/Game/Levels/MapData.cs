@@ -13,6 +13,10 @@ public sealed class MapData
 
     public MapData(int width, int height, int[] tiles)
     {
+        if (width < 0)
+            throw new ArgumentOutOfRangeException(nameof(width), "Width must be non-negative.");
+        if (height < 0)
+            throw new ArgumentOutOfRangeException(nameof(height), "Height must be non-negative.");
         if (tiles.Length != width * height)
             throw new ArgumentException($"Tiles array length ({tiles.Length}) must equal width * height ({width * height}).");
 
