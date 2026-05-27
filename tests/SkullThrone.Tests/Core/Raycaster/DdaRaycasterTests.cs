@@ -296,8 +296,8 @@ public sealed class DdaRaycasterTests
     [Fact]
     public void Constants_FieldOfView_Is60Degrees()
     {
-        float expected = MathF.PI / 3f;
-        Assert.Equal(expected, DdaRaycaster.FieldOfView);
+        float actual = MathF.PI / 3f;
+        Assert.Equal(DdaRaycaster.FieldOfView, actual);
     }
 
     #endregion
