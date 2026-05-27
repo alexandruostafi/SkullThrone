@@ -476,4 +476,155 @@ public sealed class DdaRaycasterTests
     }
 
     #endregion
+
+    #region EP — Player Inside a Wall Tile
+
+    [Fact]
+    public void CastAllRays_PlayerInsideWall_DoesNotThrow()
+    {
+        // Arrange — player at (0.5, 0.5) which is inside the wall border
+        var (tiles, w, h) = CreateBoxMap();
+
+        // Act — should not throw or produce negative distances
+        var exception = Record.Exception(() => _raycaster.CastAllRays(0.5f, 0.5f, 0f, tiles, w, h));
+
+        // Assert
+        Assert.Null(exception);
+    }
+
+    [Fact]
+    public void CastAllRays_PlayerInsideWall_AllDistancesNonNegative()
+    {
+        // Arrange
+        var (tiles, w, h) = CreateBoxMap();
+
+        // Act
+        _raycaster.CastAllRays(0.5f, 0.5f, 0f, tiles, w, h);
+
+        // Assert
+        for (int col = 0; col < DdaRaycaster.ScreenWidth; col++)
+        {
+            var hit = _raycaster.HitBuffer[col];
+            Assert.True(hit.PerpDistance >= 0f,
+                $"Column {col}: PerpDistance={hit.PerpDistance} is negative");
+        }
+    }
+
+    #endregion
+
+    #region EP — Multiple Interior Walls (Nearest Hit)
+
+    [Fact]
+    public void CastAllRays_MultipleWalls_HitsNearestWall()
+    {
+        // Arrange — 10x10 map with interior wall at x=6 and border wall at x=9
+        const int size = 10;
+        var tiles = new int[size * size];
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                if (x == 0 || x == size - 1 || y == 0 || y == size - 1)
+                    tiles[y * size + x] = 1;
+                if (x == 6)
+                    tiles[y * size + x] = 2; // Interior wall with different texture
+            }
+
+        // Act — player at (3, 5) facing east
+        _raycaster.CastAllRays(3f, 5f, 0f, tiles, size, size);
+
+        // Assert — should hit interior wall (texture 2) not border (texture 1)
+        var centerHit = _raycaster.HitBuffer[DdaRaycaster.ScreenWidth / 2];
+        Assert.Equal(2, centerHit.TextureId);
+        Assert.True(centerHit.PerpDistance < 4f); // Interior wall is 3 units away
+    }
+
+    #endregion
+
+    #region BVA — Large Texture IDs
+
+    [Fact]
+    public void CastAllRays_VeryLargeTextureId_ReturnsWithoutOverflow()
+    {
+        // Arrange — map with int.MaxValue as texture ID
+        const int size = 8;
+        var tiles = new int[size * size];
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+                if (x == 0 || x == size - 1 || y == 0 || y == size - 1)
+                    tiles[y * size + x] = int.MaxValue;
+
+        // Act
+        _raycaster.CastAllRays(4f, 4f, 0f, tiles, size, size);
+
+        // Assert
+        var centerHit = _raycaster.HitBuffer[DdaRaycaster.ScreenWidth / 2];
+        Assert.Equal(int.MaxValue, centerHit.TextureId);
+        Assert.True(centerHit.PerpDistance > 0f);
+    }
+
+    #endregion
+
+    #region BVA — Map at MaxRayDistance Boundary (64x64)
+
+    [Fact]
+    public void CastAllRays_Map64x64_HitsFarWall()
+    {
+        // Arrange — 64x64 enclosed map, player at center facing east
+        const int size = 64;
+        var tiles = new int[size * size];
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+                if (x == 0 || x == size - 1 || y == 0 || y == size - 1)
+                    tiles[y * size + x] = 1;
+
+        // Act — player at center (32, 32) facing east, wall at x=63 is 31 units away
+        _raycaster.CastAllRays(32f, 32f, 0f, tiles, size, size);
+
+        // Assert — should still hit (31 < MaxRayDistance of 64)
+        var centerHit = _raycaster.HitBuffer[DdaRaycaster.ScreenWidth / 2];
+        Assert.Equal(1, centerHit.TextureId);
+        Assert.InRange(centerHit.PerpDistance, 30f, 32f);
+    }
+
+    [Fact]
+    public void CastAllRays_WallBeyondMaxRayDistance_ReturnsNoHit()
+    {
+        // Arrange — 128x128 map, player at (2,64), wall at x=127 is 125 units away (> 64)
+        const int size = 128;
+        var tiles = new int[size * size];
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+                if (x == 0 || x == size - 1 || y == 0 || y == size - 1)
+                    tiles[y * size + x] = 1;
+
+        // Act — facing east from x=2, east wall at x=127 is 125 units away
+        _raycaster.CastAllRays(2f, 64f, 0f, tiles, size, size);
+
+        // Assert — center ray exceeds MaxRayDistance, returns no hit
+        var centerHit = _raycaster.HitBuffer[DdaRaycaster.ScreenWidth / 2];
+        Assert.Equal(0, centerHit.TextureId);
+        Assert.Equal(DdaRaycaster.MaxRayDistance, centerHit.PerpDistance);
+    }
+
+    #endregion
+
+    #region BVA — sideDistX == sideDistY Tie
+
+    [Fact]
+    public void CastAllRays_ExactDiagonalFromCorner_DoesNotInfiniteLoop()
+    {
+        // Arrange — player at exact center (4.0, 4.0) facing 45 degrees
+        // sideDistX and sideDistY start equal when player is at integer + 0.5 facing diagonal
+        var (tiles, w, h) = CreateBoxMap();
+
+        // Act — should complete without hanging
+        _raycaster.CastAllRays(4.5f, 4.5f, MathF.PI / 4f, tiles, w, h);
+
+        // Assert — should produce a valid hit
+        var centerHit = _raycaster.HitBuffer[DdaRaycaster.ScreenWidth / 2];
+        Assert.True(centerHit.TextureId > 0);
+        Assert.True(centerHit.PerpDistance > 0f);
+    }
+
+    #endregion
 }

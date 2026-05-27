@@ -11,6 +11,7 @@ public sealed class DdaRaycaster
     public const int ScreenWidth = 320;
     public const int ScreenHeight = 200;
     public const float FieldOfView = MathF.PI / 3f; // 60 degrees
+    /// <summary>Maximum ray march steps. Matches the expected maximum map dimension.</summary>
     public const int MaxRayDistance = 64;
 
     private readonly RayHit[] _hitBuffer = new RayHit[ScreenWidth];
