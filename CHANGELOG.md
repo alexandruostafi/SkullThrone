@@ -1,3 +1,9 @@
+## [0.7.0](https://github.com/alexandruostafi/SkullThrone/compare/v0.6.0...v0.7.0) (2026-05-28)
+
+### Features
+
+* implement vertical look using Y-Shearing ([ba0161b](https://github.com/alexandruostafi/SkullThrone/commit/ba0161b076a2cd2755fd4203f9eb3978259b8cac))
+
 ## 0.6.0 (2026-05-28)
 
 ### Features
