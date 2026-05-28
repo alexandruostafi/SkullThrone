@@ -548,4 +548,185 @@ public sealed class WallRendererTests
     }
 
     #endregion
+
+    #region EP — PitchOffset Positive (Looking Up)
+
+    [Fact]
+    public void RenderToFramebuffer_PositivePitch_WallShiftsDown()
+    {
+        // Arrange — pitchOffset=40 shifts walls down; top pixels become ceiling
+        var hitBuffer = CreateUniformHitBuffer(new RayHit
+        {
+            PerpDistance = 2f,
+            TextureId = 1,
+            IsVerticalSide = true,
+            WallX = 0.5f
+        });
+        Array.Fill(_framebuffer, Color.Magenta);
+
+        // Act
+        WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, pitchOffset: 40);
+
+        // Assert — wall region shifted down; original center (y=100) should now be wall
+        int col = DdaRaycaster.ScreenWidth / 2;
+        int lineHeight = WallRenderingCalculations.CalculateLineHeight(2f);
+        int drawStart = WallRenderingCalculations.CalculateDrawStart(lineHeight, 40);
+        int drawEnd = WallRenderingCalculations.CalculateDrawEnd(lineHeight, 40);
+
+        // Wall pixels in new range should be red
+        int midWall = (drawStart + drawEnd) / 2;
+        Assert.Equal(Color.Red, _framebuffer[midWall * DdaRaycaster.ScreenWidth + col]);
+
+        // Pixels above drawStart should be unwritten (ceiling)
+        if (drawStart > 0)
+            Assert.Equal(Color.Magenta, _framebuffer[(drawStart - 1) * DdaRaycaster.ScreenWidth + col]);
+    }
+
+    #endregion
+
+    #region EP — PitchOffset Negative (Looking Down)
+
+    [Fact]
+    public void RenderToFramebuffer_NegativePitch_WallShiftsUp()
+    {
+        // Arrange
+        var hitBuffer = CreateUniformHitBuffer(new RayHit
+        {
+            PerpDistance = 2f,
+            TextureId = 1,
+            IsVerticalSide = true,
+            WallX = 0.5f
+        });
+        Array.Fill(_framebuffer, Color.Magenta);
+
+        // Act
+        WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, pitchOffset: -40);
+
+        // Assert
+        int col = DdaRaycaster.ScreenWidth / 2;
+        int lineHeight = WallRenderingCalculations.CalculateLineHeight(2f);
+        int drawStart = WallRenderingCalculations.CalculateDrawStart(lineHeight, -40);
+        int drawEnd = WallRenderingCalculations.CalculateDrawEnd(lineHeight, -40);
+
+        int midWall = (drawStart + drawEnd) / 2;
+        Assert.Equal(Color.Red, _framebuffer[midWall * DdaRaycaster.ScreenWidth + col]);
+
+        // Pixels below drawEnd should be unwritten (floor)
+        if (drawEnd < DdaRaycaster.ScreenHeight - 1)
+            Assert.Equal(Color.Magenta, _framebuffer[(drawEnd + 1) * DdaRaycaster.ScreenWidth + col]);
+    }
+
+    #endregion
+
+    #region BVA — PitchOffset at MaxPitch with Close Wall
+
+    [Fact]
+    public void RenderToFramebuffer_MaxPitchCloseWall_NoIndexOutOfBounds()
+    {
+        var hitBuffer = CreateUniformHitBuffer(new RayHit
+        {
+            PerpDistance = 0.5f,
+            TextureId = 1,
+            IsVerticalSide = true,
+            WallX = 0.5f
+        });
+
+        var exception = Record.Exception(() =>
+            WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, pitchOffset: 80));
+
+        Assert.Null(exception);
+    }
+
+    [Fact]
+    public void RenderToFramebuffer_MinPitchCloseWall_NoIndexOutOfBounds()
+    {
+        var hitBuffer = CreateUniformHitBuffer(new RayHit
+        {
+            PerpDistance = 0.5f,
+            TextureId = 1,
+            IsVerticalSide = true,
+            WallX = 0.5f
+        });
+
+        var exception = Record.Exception(() =>
+            WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, pitchOffset: -80));
+
+        Assert.Null(exception);
+    }
+
+    #endregion
+
+    #region EP — Texture Coordinate Correctness with PitchOffset
+
+    [Fact]
+    public void RenderToFramebuffer_PositivePitch_TextureNotGarbled()
+    {
+        // With a solid red texture, all wall pixels must be red regardless of pitchOffset
+        var hitBuffer = CreateUniformHitBuffer(new RayHit
+        {
+            PerpDistance = 1f,
+            TextureId = 1,
+            IsVerticalSide = true,
+            WallX = 0.5f
+        });
+
+        WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, pitchOffset: 40);
+
+        int col = DdaRaycaster.ScreenWidth / 2;
+        int lineHeight = WallRenderingCalculations.CalculateLineHeight(1f);
+        int drawStart = WallRenderingCalculations.CalculateDrawStart(lineHeight, 40);
+        int drawEnd = WallRenderingCalculations.CalculateDrawEnd(lineHeight, 40);
+
+        for (int y = drawStart; y < drawEnd; y++)
+        {
+            Assert.Equal(Color.Red, _framebuffer[y * DdaRaycaster.ScreenWidth + col]);
+        }
+    }
+
+    [Fact]
+    public void RenderToFramebuffer_NegativePitch_TextureNotGarbled()
+    {
+        var hitBuffer = CreateUniformHitBuffer(new RayHit
+        {
+            PerpDistance = 1f,
+            TextureId = 1,
+            IsVerticalSide = true,
+            WallX = 0.5f
+        });
+
+        WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, pitchOffset: -40);
+
+        int col = DdaRaycaster.ScreenWidth / 2;
+        int lineHeight = WallRenderingCalculations.CalculateLineHeight(1f);
+        int drawStart = WallRenderingCalculations.CalculateDrawStart(lineHeight, -40);
+        int drawEnd = WallRenderingCalculations.CalculateDrawEnd(lineHeight, -40);
+
+        for (int y = drawStart; y < drawEnd; y++)
+        {
+            Assert.Equal(Color.Red, _framebuffer[y * DdaRaycaster.ScreenWidth + col]);
+        }
+    }
+
+    #endregion
+
+    #region BVA — PitchOffset with Far Wall
+
+    [Fact]
+    public void RenderToFramebuffer_MaxPitchFarWall_NoIndexOutOfBounds()
+    {
+        var hitBuffer = CreateUniformHitBuffer(new RayHit
+        {
+            PerpDistance = 20f,
+            TextureId = 1,
+            IsVerticalSide = true,
+            WallX = 0.5f
+        });
+
+        var exception = Record.Exception(() =>
+            WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, pitchOffset: 80));
+
+        Assert.Null(exception);
+    }
+
+    #endregion
 }

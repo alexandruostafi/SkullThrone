@@ -287,4 +287,102 @@ public sealed class WallRenderingCalculationsTests
     }
 
     #endregion
+
+    #region CalculateDrawStart with pitchOffset — EP
+
+    [Theory]
+    [InlineData(50, 40, 115)]   // -25+100+40=115
+    [InlineData(50, -40, 35)]   // -25+100-40=35
+    [InlineData(200, 80, 80)]   // -100+100+80=80
+    [InlineData(200, -80, 0)]   // -100+100-80=-80→0
+    public void CalculateDrawStart_WithPitchOffset_ReturnsExpected(int lineHeight, int pitchOffset, int expected)
+    {
+        Assert.Equal(expected, WallRenderingCalculations.CalculateDrawStart(lineHeight, pitchOffset));
+    }
+
+    [Theory]
+    [InlineData(400, -80)]  // -200+100-80=-180→0
+    [InlineData(400, 80)]   // -200+100+80=-20→0
+    public void CalculateDrawStart_LargeLineHeightWithPitch_ClampedToZero(int lineHeight, int pitchOffset)
+    {
+        Assert.Equal(0, WallRenderingCalculations.CalculateDrawStart(lineHeight, pitchOffset));
+    }
+
+    [Theory]
+    [InlineData(10, 80)]  // -5+100+80=175
+    [InlineData(10, -80)] // -5+100-80=15
+    public void CalculateDrawStart_SmallLineHeightWithPitch_WithinBounds(int lineHeight, int pitchOffset)
+    {
+        int start = WallRenderingCalculations.CalculateDrawStart(lineHeight, pitchOffset);
+        Assert.InRange(start, 0, DdaRaycaster.ScreenHeight - 1);
+    }
+
+    #endregion
+
+    #region CalculateDrawEnd with pitchOffset — EP
+
+    [Theory]
+    [InlineData(50, 40, 165)]    // 25+100+40=165
+    [InlineData(50, -40, 85)]    // 25+100-40=85
+    [InlineData(200, 80, 199)]   // 100+100+80=280→199
+    [InlineData(200, -80, 120)]  // 100+100-80=120
+    public void CalculateDrawEnd_WithPitchOffset_ReturnsExpected(int lineHeight, int pitchOffset, int expected)
+    {
+        Assert.Equal(expected, WallRenderingCalculations.CalculateDrawEnd(lineHeight, pitchOffset));
+    }
+
+    [Theory]
+    [InlineData(200, 80)]  // clamped
+    [InlineData(400, 80)]  // clamped
+    [InlineData(400, -80)] // 200+100-80=220→199
+    public void CalculateDrawEnd_LargeLineHeightWithPitch_ClampedToMax(int lineHeight, int pitchOffset)
+    {
+        Assert.Equal(DdaRaycaster.ScreenHeight - 1, WallRenderingCalculations.CalculateDrawEnd(lineHeight, pitchOffset));
+    }
+
+    [Theory]
+    [InlineData(10, -80)] // 5+100-80=25
+    [InlineData(10, 80)]  // 5+100+80=185
+    public void CalculateDrawEnd_SmallLineHeightWithPitch_WithinBounds(int lineHeight, int pitchOffset)
+    {
+        int end = WallRenderingCalculations.CalculateDrawEnd(lineHeight, pitchOffset);
+        Assert.InRange(end, 0, DdaRaycaster.ScreenHeight - 1);
+    }
+
+    #endregion
+
+    #region Draw Range Consistency with pitchOffset
+
+    [Theory]
+    [InlineData(10, 80)]
+    [InlineData(10, -80)]
+    [InlineData(50, 40)]
+    [InlineData(50, -40)]
+    [InlineData(200, 80)]
+    [InlineData(200, -80)]
+    [InlineData(0, 80)]
+    [InlineData(0, -80)]
+    [InlineData(500, 0)]
+    public void DrawStartAndEnd_WithPitchOffset_StartLessThanOrEqualToEnd(int lineHeight, int pitchOffset)
+    {
+        int start = WallRenderingCalculations.CalculateDrawStart(lineHeight, pitchOffset);
+        int end = WallRenderingCalculations.CalculateDrawEnd(lineHeight, pitchOffset);
+        Assert.True(start <= end, $"Start ({start}) > End ({end}) for lineHeight={lineHeight}, pitch={pitchOffset}");
+    }
+
+    [Theory]
+    [InlineData(10, 80)]
+    [InlineData(10, -80)]
+    [InlineData(200, 80)]
+    [InlineData(200, -80)]
+    [InlineData(50, 0)]
+    public void DrawStartAndEnd_WithPitchOffset_WithinScreenBounds(int lineHeight, int pitchOffset)
+    {
+        int start = WallRenderingCalculations.CalculateDrawStart(lineHeight, pitchOffset);
+        int end = WallRenderingCalculations.CalculateDrawEnd(lineHeight, pitchOffset);
+        Assert.InRange(start, 0, DdaRaycaster.ScreenHeight - 1);
+        Assert.InRange(end, 0, DdaRaycaster.ScreenHeight - 1);
+    }
+
+    #endregion
 }

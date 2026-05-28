@@ -192,6 +192,116 @@ public sealed class FloorCeilingRendererTests
 
     #endregion
 
+    #region PitchOffset — Floor/Ceiling with Vertical Look
+
+    [Fact]
+    public void Render_PositivePitch_MoreCeilingVisible()
+    {
+        // Arrange — looking up: horizon shifts down, more ceiling area
+        var renderer = new FloorCeilingRenderer();
+        var hitBuffer = CreateUniformHitBuffer(new RayHit
+        {
+            PerpDistance = 4f,
+            TextureId = 1,
+            IsVerticalSide = true,
+            WallX = 0.5f
+        });
+        Array.Fill(_framebuffer, Color.Magenta);
+
+        // Act
+        renderer.Render(_framebuffer, hitBuffer, 8f, 8f, 0f, pitchOffset: 40);
+
+        // Assert — ceiling region (above wall) should have pixels written
+        int lineHeight = WallRenderingCalculations.CalculateLineHeight(4f);
+        int drawStart = WallRenderingCalculations.CalculateDrawStart(lineHeight, 40);
+        int col = DdaRaycaster.ScreenWidth / 2;
+
+        bool anyCeilingWritten = false;
+        for (int y = 0; y < drawStart; y++)
+        {
+            if (_framebuffer[y * DdaRaycaster.ScreenWidth + col] != Color.Magenta)
+            {
+                anyCeilingWritten = true;
+                break;
+            }
+        }
+
+        Assert.True(anyCeilingWritten);
+    }
+
+    [Fact]
+    public void Render_NegativePitch_MoreFloorVisible()
+    {
+        // Arrange — looking down: horizon shifts up, more floor area
+        var renderer = new FloorCeilingRenderer();
+        var hitBuffer = CreateUniformHitBuffer(new RayHit
+        {
+            PerpDistance = 4f,
+            TextureId = 1,
+            IsVerticalSide = true,
+            WallX = 0.5f
+        });
+        Array.Fill(_framebuffer, Color.Magenta);
+
+        // Act
+        renderer.Render(_framebuffer, hitBuffer, 8f, 8f, 0f, pitchOffset: -40);
+
+        // Assert — floor region (below wall) should have pixels written
+        int lineHeight = WallRenderingCalculations.CalculateLineHeight(4f);
+        int drawEnd = WallRenderingCalculations.CalculateDrawEnd(lineHeight, -40);
+        int col = DdaRaycaster.ScreenWidth / 2;
+
+        bool anyFloorWritten = false;
+        for (int y = drawEnd; y < DdaRaycaster.ScreenHeight; y++)
+        {
+            if (_framebuffer[y * DdaRaycaster.ScreenWidth + col] != Color.Magenta)
+            {
+                anyFloorWritten = true;
+                break;
+            }
+        }
+
+        Assert.True(anyFloorWritten);
+    }
+
+    [Fact]
+    public void Render_MaxPitch_NoIndexOutOfBounds()
+    {
+        var renderer = new FloorCeilingRenderer();
+        var hitBuffer = CreateUniformHitBuffer(new RayHit
+        {
+            PerpDistance = 2f,
+            TextureId = 1,
+            IsVerticalSide = true,
+            WallX = 0.5f
+        });
+
+        var exception = Record.Exception(() =>
+            renderer.Render(_framebuffer, hitBuffer, 8f, 8f, 0f, pitchOffset: 80));
+
+        Assert.Null(exception);
+    }
+
+    [Fact]
+    public void Render_MinPitch_NoIndexOutOfBounds()
+    {
+        var renderer = new FloorCeilingRenderer();
+        var hitBuffer = CreateUniformHitBuffer(new RayHit
+        {
+            PerpDistance = 2f,
+            TextureId = 1,
+            IsVerticalSide = true,
+            WallX = 0.5f
+        });
+
+        var exception = Record.Exception(() =>
+            renderer.Render(_framebuffer, hitBuffer, 8f, 8f, 0f, pitchOffset: -80));
+
+        Assert.Null(exception);
+    }
+
+    #endregion
+
     #region Wall Region Not Overwritten
 
     [Fact]

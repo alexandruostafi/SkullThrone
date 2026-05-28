@@ -86,4 +86,98 @@ public sealed class PlayerTests
     }
 
     #endregion
+
+    #region Pitch — Equivalence Partitions
+
+    [Fact]
+    public void Pitch_SetZero_ReturnsZero()
+    {
+        var player = new Player(1f, 1f, 0f);
+        player.Pitch = 0;
+        Assert.Equal(0, player.Pitch);
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(-40)]
+    [InlineData(-80)]
+    public void Pitch_SetValidNegative_ReturnsExactValue(int pitch)
+    {
+        var player = new Player(1f, 1f, 0f);
+        player.Pitch = pitch;
+        Assert.Equal(pitch, player.Pitch);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(40)]
+    [InlineData(80)]
+    public void Pitch_SetValidPositive_ReturnsExactValue(int pitch)
+    {
+        var player = new Player(1f, 1f, 0f);
+        player.Pitch = pitch;
+        Assert.Equal(pitch, player.Pitch);
+    }
+
+    [Theory]
+    [InlineData(81, 80)]
+    [InlineData(100, 80)]
+    [InlineData(int.MaxValue, 80)]
+    public void Pitch_SetAboveMax_ClampedToMaxPitch(int input, int expected)
+    {
+        var player = new Player(1f, 1f, 0f);
+        player.Pitch = input;
+        Assert.Equal(expected, player.Pitch);
+    }
+
+    [Theory]
+    [InlineData(-81, -80)]
+    [InlineData(-100, -80)]
+    [InlineData(int.MinValue, -80)]
+    public void Pitch_SetBelowMin_ClampedToNegativeMaxPitch(int input, int expected)
+    {
+        var player = new Player(1f, 1f, 0f);
+        player.Pitch = input;
+        Assert.Equal(expected, player.Pitch);
+    }
+
+    #endregion
+
+    #region Pitch — Boundary Value Analysis
+
+    [Theory]
+    [InlineData(-80, -80)]
+    [InlineData(-79, -79)]
+    [InlineData(79, 79)]
+    [InlineData(80, 80)]
+    public void Pitch_BoundaryValues_ReturnsExpected(int input, int expected)
+    {
+        var player = new Player(1f, 1f, 0f);
+        player.Pitch = input;
+        Assert.Equal(expected, player.Pitch);
+    }
+
+    [Fact]
+    public void Pitch_DefaultValue_IsZero()
+    {
+        var player = new Player(1f, 1f, 0f);
+        Assert.Equal(0, player.Pitch);
+    }
+
+    [Fact]
+    public void Pitch_SetMultipleTimes_LastValueWins()
+    {
+        var player = new Player(1f, 1f, 0f);
+        player.Pitch = 50;
+        player.Pitch = -30;
+        Assert.Equal(-30, player.Pitch);
+    }
+
+    [Fact]
+    public void MaxPitch_Constant_Equals80()
+    {
+        Assert.Equal(80, Player.MaxPitch);
+    }
+
+    #endregion
 }
