@@ -19,6 +19,7 @@ public sealed class SkullThroneGame : XnaGame
 
     private const float MoveSpeed = 3f;
     private const float MouseSensitivity = 0.003f;
+    private const float VerticalMouseSensitivity = 0.4f;
 
     private readonly GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch = null!;
@@ -66,9 +67,12 @@ public sealed class SkullThroneGame : XnaGame
         // Mouse look
         var mouseState = Mouse.GetState();
         int centerX = _graphics.PreferredBackBufferWidth / 2;
+        int centerY = _graphics.PreferredBackBufferHeight / 2;
         int mouseDeltaX = mouseState.X - centerX;
+        int mouseDeltaY = mouseState.Y - centerY;
         _player.Angle += mouseDeltaX * MouseSensitivity;
-        Mouse.SetPosition(centerX, _graphics.PreferredBackBufferHeight / 2);
+        _player.Pitch -= (int)(mouseDeltaY * VerticalMouseSensitivity);
+        Mouse.SetPosition(centerX, centerY);
 
         // Movement
         float moveX = 0f;
@@ -115,7 +119,7 @@ public sealed class SkullThroneGame : XnaGame
 
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
         var destinationRect = CalculateLetterboxRect();
-        _wallRenderer.Draw(_spriteBatch, _raycaster.HitBuffer, destinationRect, _player.X, _player.Y, _player.Angle);
+        _wallRenderer.Draw(_spriteBatch, _raycaster.HitBuffer, destinationRect, _player.X, _player.Y, _player.Angle, _player.Pitch);
         _spriteBatch.End();
 
         base.Draw(gameTime);

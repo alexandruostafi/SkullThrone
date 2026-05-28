@@ -29,11 +29,29 @@ public static class WallRenderingCalculations
     }
 
     /// <summary>
+    /// Calculates the clamped draw start Y coordinate with vertical look offset (Y-shearing).
+    /// </summary>
+    public static int CalculateDrawStart(int lineHeight, int pitchOffset)
+    {
+        int drawStart = -lineHeight / 2 + DdaRaycaster.ScreenHeight / 2 + pitchOffset;
+        return drawStart < 0 ? 0 : drawStart;
+    }
+
+    /// <summary>
     /// Calculates the clamped draw end Y coordinate for a wall strip.
     /// </summary>
     public static int CalculateDrawEnd(int lineHeight)
     {
         int drawEnd = lineHeight / 2 + DdaRaycaster.ScreenHeight / 2;
+        return drawEnd >= DdaRaycaster.ScreenHeight ? DdaRaycaster.ScreenHeight - 1 : drawEnd;
+    }
+
+    /// <summary>
+    /// Calculates the clamped draw end Y coordinate with vertical look offset (Y-shearing).
+    /// </summary>
+    public static int CalculateDrawEnd(int lineHeight, int pitchOffset)
+    {
+        int drawEnd = lineHeight / 2 + DdaRaycaster.ScreenHeight / 2 + pitchOffset;
         return drawEnd >= DdaRaycaster.ScreenHeight ? DdaRaycaster.ScreenHeight - 1 : drawEnd;
     }
 
