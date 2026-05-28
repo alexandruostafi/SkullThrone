@@ -11,8 +11,7 @@ using Xunit;
 /// </summary>
 public sealed class WallRendererTests
 {
-    private static readonly Color CeilingColor = new(20, 12, 12);
-    private static readonly Color FloorColor = new(40, 30, 30);
+    private static readonly Color UnwrittenPixel = default;
 
     private readonly Color[] _framebuffer = new Color[DdaRaycaster.ScreenWidth * DdaRaycaster.ScreenHeight];
 
@@ -54,7 +53,7 @@ public sealed class WallRendererTests
         });
 
         // Act
-        WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, CeilingColor, FloorColor);
+        WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark);
 
         // Assert — no texture (red) pixels should exist; wall region is left unwritten
         int col = DdaRaycaster.ScreenWidth / 2;
@@ -62,13 +61,13 @@ public sealed class WallRendererTests
         int drawStart = WallRenderingCalculations.CalculateDrawStart(lineHeight);
         int drawEnd = WallRenderingCalculations.CalculateDrawEnd(lineHeight);
 
-        // Ceiling region
+        // Ceiling region — unwritten by wall renderer (handled by FloorCeilingRenderer)
         for (int y = 0; y < drawStart; y++)
-            Assert.Equal(CeilingColor, _framebuffer[y * DdaRaycaster.ScreenWidth + col]);
+            Assert.Equal(UnwrittenPixel, _framebuffer[y * DdaRaycaster.ScreenWidth + col]);
 
-        // Floor region
+        // Floor region — unwritten by wall renderer (handled by FloorCeilingRenderer)
         for (int y = drawEnd; y < DdaRaycaster.ScreenHeight; y++)
-            Assert.Equal(FloorColor, _framebuffer[y * DdaRaycaster.ScreenWidth + col]);
+            Assert.Equal(UnwrittenPixel, _framebuffer[y * DdaRaycaster.ScreenWidth + col]);
 
         // Wall region — no texture sampled (no red)
         for (int y = drawStart; y < drawEnd; y++)
@@ -93,7 +92,7 @@ public sealed class WallRendererTests
 
         // Act — should not throw
         var exception = Record.Exception(() =>
-            WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, CeilingColor, FloorColor));
+            WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark));
 
         // Assert
         Assert.Null(exception);
@@ -117,7 +116,7 @@ public sealed class WallRendererTests
 
         // Act
         var exception = Record.Exception(() =>
-            WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, CeilingColor, FloorColor));
+            WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark));
 
         // Assert
         Assert.Null(exception);
@@ -137,7 +136,7 @@ public sealed class WallRendererTests
 
         // Act
         var exception = Record.Exception(() =>
-            WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, CeilingColor, FloorColor));
+            WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark));
 
         // Assert
         Assert.Null(exception);
@@ -161,7 +160,7 @@ public sealed class WallRendererTests
 
         // Act
         var exception = Record.Exception(() =>
-            WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, CeilingColor, FloorColor));
+            WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark));
 
         // Assert
         Assert.Null(exception);
@@ -181,7 +180,7 @@ public sealed class WallRendererTests
 
         // Act
         var exception = Record.Exception(() =>
-            WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, CeilingColor, FloorColor));
+            WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark));
 
         // Assert
         Assert.Null(exception);
@@ -204,7 +203,7 @@ public sealed class WallRendererTests
         });
 
         // Act
-        WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, CeilingColor, FloorColor);
+        WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark);
 
         // Assert — center column: drawStart=0, drawEnd=199 (clamped)
         // Wall pixels from y=0 to y=198, floor at y=199 (floor loop: y from 199 to <200)
@@ -218,11 +217,11 @@ public sealed class WallRendererTests
             Assert.Equal(Color.Red, pixel);
         }
 
-        // Floor pixels from drawEnd to ScreenHeight-1
+        // Floor pixels from drawEnd to ScreenHeight-1 — unwritten by wall renderer
         for (int y = drawEnd; y < DdaRaycaster.ScreenHeight; y++)
         {
             Color pixel = _framebuffer[y * DdaRaycaster.ScreenWidth + centerCol];
-            Assert.Equal(FloorColor, pixel);
+            Assert.Equal(UnwrittenPixel, pixel);
         }
     }
 
@@ -243,7 +242,7 @@ public sealed class WallRendererTests
         });
 
         // Act
-        WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, CeilingColor, FloorColor);
+        WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark);
 
         // Assert — wall pixels should be full red
         int centerCol = DdaRaycaster.ScreenWidth / 2;
@@ -264,7 +263,7 @@ public sealed class WallRendererTests
         });
 
         // Act
-        WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, CeilingColor, FloorColor);
+        WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark);
 
         // Assert — wall pixels should be dark red
         int centerCol = DdaRaycaster.ScreenWidth / 2;
@@ -289,7 +288,7 @@ public sealed class WallRendererTests
         });
 
         // Act
-        WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, CeilingColor, FloorColor);
+        WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark);
 
         // Assert — ceiling and floor regions are correct; tiny wall gap is unwritten
         int col = DdaRaycaster.ScreenWidth / 2;
@@ -298,10 +297,10 @@ public sealed class WallRendererTests
         int drawEnd = WallRenderingCalculations.CalculateDrawEnd(lineHeight);
 
         for (int y = 0; y < drawStart; y++)
-            Assert.Equal(CeilingColor, _framebuffer[y * DdaRaycaster.ScreenWidth + col]);
+            Assert.Equal(UnwrittenPixel, _framebuffer[y * DdaRaycaster.ScreenWidth + col]);
 
         for (int y = drawEnd; y < DdaRaycaster.ScreenHeight; y++)
-            Assert.Equal(FloorColor, _framebuffer[y * DdaRaycaster.ScreenWidth + col]);
+            Assert.Equal(UnwrittenPixel, _framebuffer[y * DdaRaycaster.ScreenWidth + col]);
 
         // No texture pixels anywhere
         for (int i = 0; i < _framebuffer.Length; i++)
@@ -313,9 +312,9 @@ public sealed class WallRendererTests
     #region BVA — Framebuffer Completeness
 
     [Fact]
-    public void RenderToFramebuffer_NormalHit_AllPixelsWritten()
+    public void RenderToFramebuffer_NormalHit_WallPixelsWritten()
     {
-        // Arrange — ensure no default(Color) pixels remain
+        // Arrange — ensure wall region pixels get overwritten
         Array.Fill(_framebuffer, Color.Magenta); // sentinel value
 
         var hitBuffer = CreateUniformHitBuffer(new RayHit
@@ -327,13 +326,225 @@ public sealed class WallRendererTests
         });
 
         // Act
-        WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, CeilingColor, FloorColor);
+        WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark);
 
-        // Assert — no magenta pixels should remain
+        // Assert — wall region pixels should be overwritten (not magenta)
+        int col = DdaRaycaster.ScreenWidth / 2;
+        int lineHeight = WallRenderingCalculations.CalculateLineHeight(2f);
+        int drawStart = WallRenderingCalculations.CalculateDrawStart(lineHeight);
+        int drawEnd = WallRenderingCalculations.CalculateDrawEnd(lineHeight);
+
+        for (int y = drawStart; y < drawEnd; y++)
+        {
+            Assert.NotEqual(Color.Magenta, _framebuffer[y * DdaRaycaster.ScreenWidth + col]);
+        }
+
+        // Floor/ceiling pixels remain magenta (handled by FloorCeilingRenderer)
+        for (int y = 0; y < drawStart; y++)
+            Assert.Equal(Color.Magenta, _framebuffer[y * DdaRaycaster.ScreenWidth + col]);
+    }
+
+    #endregion
+
+    #region EP — PerpDistance NaN and Infinity
+
+    [Fact]
+    public void RenderToFramebuffer_PerpDistanceNaN_NoException()
+    {
+        // Arrange — NaN from floating-point error should not crash
+        var hitBuffer = CreateUniformHitBuffer(new RayHit
+        {
+            PerpDistance = float.NaN,
+            TextureId = 1,
+            IsVerticalSide = true,
+            WallX = 0.5f
+        });
+
+        // Act
+        var exception = Record.Exception(() =>
+            WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark));
+
+        // Assert
+        Assert.Null(exception);
+    }
+
+    [Fact]
+    public void RenderToFramebuffer_PerpDistancePositiveInfinity_NoWallPixels()
+    {
+        // Arrange — Infinity → lineHeight=0, drawStart=drawEnd=100 → no wall loop
+        var hitBuffer = CreateUniformHitBuffer(new RayHit
+        {
+            PerpDistance = float.PositiveInfinity,
+            TextureId = 1,
+            IsVerticalSide = true,
+            WallX = 0.5f
+        });
+        Array.Fill(_framebuffer, Color.Magenta);
+
+        // Act
+        WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark);
+
+        // Assert — no red (texture) pixels should exist
         for (int i = 0; i < _framebuffer.Length; i++)
         {
-            Assert.NotEqual(Color.Magenta, _framebuffer[i]);
+            Assert.NotEqual(Color.Red, _framebuffer[i]);
         }
+    }
+
+    #endregion
+
+    #region EP — Negative WallX
+
+    [Fact]
+    public void RenderToFramebuffer_WallXNegative_NoException()
+    {
+        // Arrange — negative WallX wraps via bitmask: (int)(-0.5f * 64) & 63
+        var hitBuffer = CreateUniformHitBuffer(new RayHit
+        {
+            PerpDistance = 2f,
+            TextureId = 1,
+            IsVerticalSide = true,
+            WallX = -0.5f
+        });
+
+        // Act
+        var exception = Record.Exception(() =>
+            WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark));
+
+        // Assert
+        Assert.Null(exception);
+    }
+
+    #endregion
+
+    #region BVA — Boundary Columns (0 and 319)
+
+    [Fact]
+    public void RenderToFramebuffer_Column0_WritesWallPixels()
+    {
+        // Arrange
+        var hitBuffer = CreateUniformHitBuffer(new RayHit
+        {
+            PerpDistance = 2f,
+            TextureId = 1,
+            IsVerticalSide = true,
+            WallX = 0.5f
+        });
+
+        // Act
+        WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark);
+
+        // Assert — column 0 should have wall pixels
+        int midY = DdaRaycaster.ScreenHeight / 2;
+        Assert.Equal(Color.Red, _framebuffer[midY * DdaRaycaster.ScreenWidth + 0]);
+    }
+
+    [Fact]
+    public void RenderToFramebuffer_Column319_WritesWallPixels()
+    {
+        // Arrange
+        var hitBuffer = CreateUniformHitBuffer(new RayHit
+        {
+            PerpDistance = 2f,
+            TextureId = 1,
+            IsVerticalSide = true,
+            WallX = 0.5f
+        });
+
+        // Act
+        WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark);
+
+        // Assert — column 319 (last) should have wall pixels
+        int midY = DdaRaycaster.ScreenHeight / 2;
+        int lastCol = DdaRaycaster.ScreenWidth - 1;
+        Assert.Equal(Color.Red, _framebuffer[midY * DdaRaycaster.ScreenWidth + lastCol]);
+    }
+
+    #endregion
+
+    #region BVA — WallX Near 1.0
+
+    [Fact]
+    public void RenderToFramebuffer_WallXNearOne_SamplesLastTextureColumn()
+    {
+        // Arrange — WallX=0.999 → texX = (int)(0.999*64) & 63 = 63
+        var hitBuffer = CreateUniformHitBuffer(new RayHit
+        {
+            PerpDistance = 2f,
+            TextureId = 1,
+            IsVerticalSide = true,
+            WallX = 0.999f
+        });
+
+        // Act
+        var exception = Record.Exception(() =>
+            WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark));
+
+        // Assert
+        Assert.Null(exception);
+        // Wall pixels should still be red (solid texture)
+        int midY = DdaRaycaster.ScreenHeight / 2;
+        int col = DdaRaycaster.ScreenWidth / 2;
+        Assert.Equal(Color.Red, _framebuffer[midY * DdaRaycaster.ScreenWidth + col]);
+    }
+
+    #endregion
+
+    #region EP — PerpDistance MaxValue
+
+    [Fact]
+    public void RenderToFramebuffer_PerpDistanceMaxValue_NoException()
+    {
+        // Arrange — float.MaxValue → lineHeight=0 → no wall pixels
+        var hitBuffer = CreateUniformHitBuffer(new RayHit
+        {
+            PerpDistance = float.MaxValue,
+            TextureId = 1,
+            IsVerticalSide = true,
+            WallX = 0.5f
+        });
+
+        // Act
+        var exception = Record.Exception(() =>
+            WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark));
+
+        // Assert
+        Assert.Null(exception);
+    }
+
+    #endregion
+
+    #region EP — Non-Uniform Hit Buffer
+
+    [Fact]
+    public void RenderToFramebuffer_MixedHitBuffer_EachColumnRenderedIndependently()
+    {
+        // Arrange — left half close, right half far
+        var hitBuffer = new RayHit[DdaRaycaster.ScreenWidth];
+        for (int x = 0; x < DdaRaycaster.ScreenWidth / 2; x++)
+        {
+            hitBuffer[x] = new RayHit { PerpDistance = 0.5f, TextureId = 1, IsVerticalSide = true, WallX = 0.5f };
+        }
+
+        for (int x = DdaRaycaster.ScreenWidth / 2; x < DdaRaycaster.ScreenWidth; x++)
+        {
+            hitBuffer[x] = new RayHit { PerpDistance = 10f, TextureId = 1, IsVerticalSide = true, WallX = 0.5f };
+        }
+
+        // Act
+        WallRenderer.RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark);
+
+        // Assert — left column (close) should have wall pixel at top; right column (far) should not
+        int topRow = 5;
+        int leftCol = 10;
+        int rightCol = DdaRaycaster.ScreenWidth - 10;
+
+        // Close wall (0.5 distance) fills entire screen → red at top
+        Assert.Equal(Color.Red, _framebuffer[topRow * DdaRaycaster.ScreenWidth + leftCol]);
+
+        // Far wall (10 distance) → lineHeight=20, drawStart=90 → top row NOT wall
+        Color rightPixel = _framebuffer[topRow * DdaRaycaster.ScreenWidth + rightCol];
+        Assert.NotEqual(Color.Red, rightPixel);
     }
 
     #endregion

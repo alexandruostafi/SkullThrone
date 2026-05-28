@@ -14,9 +14,7 @@ public sealed class WallRenderer : IDisposable
     private readonly Color[] _framebuffer;
     private readonly Color[][] _textureData;
     private readonly Color[][] _textureDataDark;
-
-    private static readonly Color CeilingColor = new(20, 12, 12);
-    private static readonly Color FloorColor = new(40, 30, 30);
+    private readonly FloorCeilingRenderer _floorCeilingRenderer;
 
     /// <summary>
     /// Initializes the wall renderer, generating procedural textures and pre-computing
@@ -26,6 +24,9 @@ public sealed class WallRenderer : IDisposable
     {
         _framebuffer = new Color[DdaRaycaster.ScreenWidth * DdaRaycaster.ScreenHeight];
         _framebufferTexture = new Texture2D(graphicsDevice, DdaRaycaster.ScreenWidth, DdaRaycaster.ScreenHeight);
+        _floorCeilingRenderer = new FloorCeilingRenderer(
+            floorTextureId: ProceduralFloorCeilingTextures.FloorDarkBricks,
+            ceilingTextureId: ProceduralFloorCeilingTextures.CeilingDungeon);
 
         Texture2D?[] textures;
         try
@@ -72,11 +73,12 @@ public sealed class WallRenderer : IDisposable
     }
 
     /// <summary>
-    /// Draws wall columns from the raycaster hit buffer.
+    /// Draws wall columns from the raycaster hit buffer with textured floor/ceiling.
     /// </summary>
-    public void Draw(SpriteBatch spriteBatch, ReadOnlySpan<RayHit> hitBuffer, Rectangle destinationRect)
+    public void Draw(SpriteBatch spriteBatch, ReadOnlySpan<RayHit> hitBuffer, Rectangle destinationRect, float playerX, float playerY, float playerAngle)
     {
         RenderToFramebuffer(hitBuffer);
+        _floorCeilingRenderer.Render(_framebuffer, hitBuffer, playerX, playerY, playerAngle);
 
         _framebufferTexture.SetData(_framebuffer);
         spriteBatch.Draw(
@@ -93,19 +95,18 @@ public sealed class WallRenderer : IDisposable
 
     private void RenderToFramebuffer(ReadOnlySpan<RayHit> hitBuffer)
     {
-        RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, CeilingColor, FloorColor);
+        RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark);
     }
 
     /// <summary>
-    /// Renders wall columns into a framebuffer array. Extracted as internal static for testability.
+    /// Renders wall columns into a framebuffer array. Floor/ceiling pixels are left
+    /// unwritten here — they are filled by <see cref="FloorCeilingRenderer"/>.
     /// </summary>
     internal static void RenderToFramebuffer(
         ReadOnlySpan<RayHit> hitBuffer,
         Color[] framebuffer,
         Color[][] textureData,
-        Color[][] textureDataDark,
-        Color ceilingColor,
-        Color floorColor)
+        Color[][] textureDataDark)
     {
         for (int column = 0; column < DdaRaycaster.ScreenWidth; column++)
         {
@@ -114,10 +115,6 @@ public sealed class WallRenderer : IDisposable
             int lineHeight = WallRenderingCalculations.CalculateLineHeight(hit.PerpDistance);
             int drawStart = WallRenderingCalculations.CalculateDrawStart(lineHeight);
             int drawEnd = WallRenderingCalculations.CalculateDrawEnd(lineHeight);
-
-            // Ceiling
-            for (int y = 0; y < drawStart; y++)
-                framebuffer[y * DdaRaycaster.ScreenWidth + column] = ceilingColor;
 
             // Wall - texture-mapped
             if (hit.TextureId != 0 && hit.TextureId < textureData.Length && textureData[hit.TextureId].Length > 0)
@@ -135,10 +132,6 @@ public sealed class WallRenderer : IDisposable
                     framebuffer[y * DdaRaycaster.ScreenWidth + column] = texData[texY * ProceduralTextures.TextureWidth + texX];
                 }
             }
-
-            // Floor
-            for (int y = drawEnd; y < DdaRaycaster.ScreenHeight; y++)
-                framebuffer[y * DdaRaycaster.ScreenWidth + column] = floorColor;
         }
     }
 }
