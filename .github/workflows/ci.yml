@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, feat-*, fix-*, refactor-*]
+    branches: [main, feat-*, fix-*, refactor-*, docs-*]
   pull_request:
     branches: [main]
 
@@ -44,10 +44,10 @@ jobs:
       - name: Validate branch name
         run: |
           $branch = "${{ github.head_ref || github.ref_name }}"
-          $pattern = '^(main|feat-[a-z0-9-]+|fix-[a-z0-9-]+|chore-[a-z0-9-]+|refactor-[a-z0-9-]+|test-[a-z0-9-]+)$'
+          $pattern = '^(main|feat-[a-z0-9-]+|fix-[a-z0-9-]+|chore-[a-z0-9-]+|docs-[a-z0-9-]+|refactor-[a-z0-9-]+|test-[a-z0-9-]+)$'
           if ($branch -notmatch $pattern) {
             Write-Warning "Branch name '$branch' does not match pattern: $pattern"
-            Write-Warning "Valid prefixes: feat-, fix-, chore-, refactor-, test-"
+            Write-Warning "Valid prefixes: feat-, fix-, chore-, docs-, refactor-, test-"
             exit 1
           } else {
             Write-Host "Branch name '$branch' is valid."
