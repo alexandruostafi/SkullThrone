@@ -115,7 +115,7 @@ public sealed class SkullThroneGame : XnaGame
 
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
         var destinationRect = CalculateLetterboxRect();
-        _wallRenderer.Draw(_spriteBatch, _raycaster.HitBuffer, destinationRect);
+        _wallRenderer.Draw(_spriteBatch, _raycaster.HitBuffer, destinationRect, _player.X, _player.Y, _player.Angle);
         _spriteBatch.End();
 
         base.Draw(gameTime);
