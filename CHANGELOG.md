@@ -1,3 +1,9 @@
+## [1.1.0](https://github.com/alexandruostafi/SkullThrone/compare/v1.0.0...v1.1.0) (2026-05-28)
+
+### Features
+
+* implement floor and ceiling rendering ([6f4d2c9](https://github.com/alexandruostafi/SkullThrone/commit/6f4d2c91cabb1e9f839abf074e3604dc73350a39))
+
 ## 0.5.0 (2026-05-27)
 
 ### Features
