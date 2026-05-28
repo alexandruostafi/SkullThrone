@@ -21,7 +21,7 @@ A fast-paced, violent retro FPS with a Warhammer 40K-inspired aesthetic. Low-res
 | Spec | Value |
 |------|-------|
 | Rendering | Grid-based raycasting (DDA algorithm) |
-| Projection | Pseudo-3D: Y-shearing vertical look, sector height differences, jumping |
+| Projection | Pseudo-3D: Y-shearing vertical look, portals (inter-sector teleportation) |
 | Logical resolution | 320×200 |
 | Window | Resizable, supports fullscreen mode |
 | Aspect ratio | Maintain logical aspect ratio with letterboxing/pillarboxing |
@@ -46,7 +46,6 @@ A fast-paced, violent retro FPS with a Warhammer 40K-inspired aesthetic. Low-res
 - First-person perspective only
 - Movement: forward, backward, strafe left/right
 - Vertical look: Y-shearing (pseudo look up/down)
-- Jumping: parabolic arc, affects render height
 - Health: 0–100 (dies at 0)
 
 ### 4.3 Weapons
@@ -99,14 +98,14 @@ DOOM-style bottom bar:
 
 - Grid-based tile maps stored as JSON
 - Tiles: 2D array (0 = empty, 1+ = wall texture ID)
-- Sectors: floor/ceiling height overrides
+- Portals: bidirectional wall-tile teleporters linking isolated regions of the grid
 - Entities: typed objects with position and optional facing angle
 
 ### 5.2 Map Editor
 
 - Standalone tool (`SkullThrone.MapEditor` project)
 - Visual grid with zoom/pan
-- Tile painting, entity placement, sector editing
+- Tile painting, entity placement, portal placement and linking
 - Undo/redo support
 - Validation on save (spawn exists, map enclosed, no entities in walls)
 - Export: JSON
@@ -122,7 +121,8 @@ Planned for post-1.0. Not in scope for initial release.
 **One complete level** with all systems functional:
 
 - [ ] Raycasting engine rendering walls, floors, ceilings
-- [ ] Player movement + jumping + vertical look
+- [ ] Player movement + vertical look
+- [ ] Portal system (wall-tile teleportation between sectors)
 - [ ] Collision detection with wall sliding
 - [ ] Map editor producing JSON levels
 - [ ] Pick-ups: skulls, ammo, health
@@ -145,7 +145,7 @@ Planned for post-1.0. Not in scope for initial release.
 
 | # | Milestone | Deliverables |
 |---|-----------|-------------|
-| 1 | Playable Level | Raycasting engine, player movement, collision, hand-written JSON map, one test map |
+| 1 | Playable Level | Raycasting engine, player movement, collision, portals, hand-written JSON map, one test map |
 | 2 | Combat (Melee) | Skull/ammo/health pick-ups, chainsword weapon, Blood Rage |
 | 3 | Combat (Ranged) | Bolt pistol, ammo system |
 | 4 | Enemies | Imperial Guard AI, Loyalist Astartes AI, full combat loop |

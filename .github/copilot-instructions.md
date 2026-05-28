@@ -5,7 +5,7 @@ SkullThrone is a retro first-person shooter (DOOM/Wolfenstein-style) built with 
 The player is a betrayed World Eater tearing through loyalist Astartes and Imperial Guard, harvesting skulls for the Skull Throne.
 
 ### Core Technical Pillars
-- **Rendering**: Grid-based raycasting (DDA), pseudo-3D (Y-shearing vertical look, sector height differences, jumping)
+- **Rendering**: Grid-based raycasting (DDA), pseudo-3D (Y-shearing vertical look, portals for inter-sector teleportation)
 - **Resolution**: Retro low-res (320×200 logical resolution, scaled to window)
 - **Framework**: MonoGame (no Unity/Unreal/Godot)
 - **Platform**: Windows (cross-platform consideration later)
@@ -91,7 +91,9 @@ Maps are grid-based. Example schema:
   "height": 32,
   "playerSpawn": { "x": 5, "y": 5, "angle": 90 },
   "tiles": [],
-  "sectors": [],
+  "portals": [
+    { "id": "portal_1", "tileA": { "x": 10, "y": 5 }, "tileB": { "x": 45, "y": 30 }, "color": "green" }
+  ],
   "entities": [
     { "type": "SkullPickup", "x": 10, "y": 12 },
     { "type": "HealthPickup", "x": 14, "y": 8 },
@@ -116,7 +118,7 @@ SkullThrone/
 │   │   │   ├── Raycaster/          # Raycasting engine (DDA, rendering)
 │   │   │   ├── Input/              # Input handling
 │   │   │   ├── Audio/              # Sound/music
-│   │   │   ├── Physics/            # Collision, movement, jumping
+│   │   │   ├── Physics/            # Collision, movement, portals
 │   │   │   └── StateManagement/    # Game state machine
 │   │   ├── Game/                   # Game-specific logic
 │   │   │   ├── Entities/           # Player, enemies, pickups
