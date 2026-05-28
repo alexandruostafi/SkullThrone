@@ -22,12 +22,11 @@ The player can move through a rendered level in first-person with collision dete
 | v0.5.0 | Textured walls (multiple texture IDs from map data) | `feat-wall-textures` |
 | v0.6.0 | Floor and ceiling rendering | `feat-floor-ceiling` |
 | v0.7.0 | Vertical look (Y-shearing) | `feat-vertical-look` |
-| v0.8.0 | Sector height differences (variable floor/ceiling) | `feat-sector-heights` |
-| v0.9.0 | Jumping | `feat-jumping` |
-| v0.10.0 | Fullscreen/resizable window with aspect ratio preservation | `feat-window-scaling` |
-| v0.11.0 | Game state machine (Menu, Playing, Paused, Game Over) | `feat-game-states` |
-| v0.12.0 | JSON map loading (hand-written maps) | `feat-map-loading` |
-| v0.13.0 | First test level (hand-crafted JSON) | `feat-first-level` |
+| v0.8.0 | Portal system (wall-tile teleporters between grid sectors) | `feat-portals` |
+| v0.9.0 | Fullscreen/resizable window with aspect ratio preservation | `feat-window-scaling` |
+| v0.10.0 | Game state machine (Menu, Playing, Paused, Game Over) | `feat-game-states` |
+| v0.11.0 | JSON map loading (hand-written maps) | `feat-map-loading` |
+| v0.12.0 | First test level (hand-crafted JSON) | `feat-first-level` |
 
 ---
 
@@ -88,7 +87,7 @@ Standalone tool for designing levels visually.
 | TBD | Grid rendering with zoom/pan | `feat-editor-grid` |
 | TBD | Tile painting (wall placement/deletion) | `feat-editor-tiles` |
 | TBD | Entity placement (enemies, pickups, spawn) | `feat-editor-entities` |
-| TBD | Sector editing (floor/ceiling heights) | `feat-editor-sectors` |
+| TBD | Portal placement & linking | `feat-editor-portals` |
 | TBD | Undo/redo | `feat-editor-undo` |
 | TBD | Map validation + JSON export | `feat-editor-export` |
 
