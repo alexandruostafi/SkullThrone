@@ -75,10 +75,10 @@ public sealed class WallRenderer : IDisposable
     /// <summary>
     /// Draws wall columns from the raycaster hit buffer with textured floor/ceiling.
     /// </summary>
-    public void Draw(SpriteBatch spriteBatch, ReadOnlySpan<RayHit> hitBuffer, Rectangle destinationRect, float playerX, float playerY, float playerAngle)
+    public void Draw(SpriteBatch spriteBatch, ReadOnlySpan<RayHit> hitBuffer, Rectangle destinationRect, float playerX, float playerY, float playerAngle, int pitchOffset = 0)
     {
-        RenderToFramebuffer(hitBuffer);
-        _floorCeilingRenderer.Render(_framebuffer, hitBuffer, playerX, playerY, playerAngle);
+        RenderToFramebuffer(hitBuffer, pitchOffset);
+        _floorCeilingRenderer.Render(_framebuffer, hitBuffer, playerX, playerY, playerAngle, pitchOffset);
 
         _framebufferTexture.SetData(_framebuffer);
         spriteBatch.Draw(
@@ -93,28 +93,34 @@ public sealed class WallRenderer : IDisposable
         _framebufferTexture.Dispose();
     }
 
-    private void RenderToFramebuffer(ReadOnlySpan<RayHit> hitBuffer)
+    private void RenderToFramebuffer(ReadOnlySpan<RayHit> hitBuffer, int pitchOffset = 0)
     {
-        RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark);
+        RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, pitchOffset);
     }
 
     /// <summary>
     /// Renders wall columns into a framebuffer array. Floor/ceiling pixels are left
     /// unwritten here — they are filled by <see cref="FloorCeilingRenderer"/>.
     /// </summary>
+    /// <param name="hitBuffer">Raycaster hit results per column.</param>
+    /// <param name="framebuffer">Pixel buffer to write into.</param>
+    /// <param name="textureData">NS-facing wall texture data.</param>
+    /// <param name="textureDataDark">EW-facing (darkened) wall texture data.</param>
+    /// <param name="pitchOffset">Y-shearing offset in pixels (positive = looking up).</param>
     internal static void RenderToFramebuffer(
         ReadOnlySpan<RayHit> hitBuffer,
         Color[] framebuffer,
         Color[][] textureData,
-        Color[][] textureDataDark)
+        Color[][] textureDataDark,
+        int pitchOffset = 0)
     {
         for (int column = 0; column < DdaRaycaster.ScreenWidth; column++)
         {
             ref readonly var hit = ref hitBuffer[column];
 
             int lineHeight = WallRenderingCalculations.CalculateLineHeight(hit.PerpDistance);
-            int drawStart = WallRenderingCalculations.CalculateDrawStart(lineHeight);
-            int drawEnd = WallRenderingCalculations.CalculateDrawEnd(lineHeight);
+            int drawStart = WallRenderingCalculations.CalculateDrawStart(lineHeight, pitchOffset);
+            int drawEnd = WallRenderingCalculations.CalculateDrawEnd(lineHeight, pitchOffset);
 
             // Wall - texture-mapped
             if (hit.TextureId != 0 && hit.TextureId < textureData.Length && textureData[hit.TextureId].Length > 0)
@@ -123,7 +129,7 @@ public sealed class WallRenderer : IDisposable
                 int texX = (int)(hit.WallX * ProceduralTextures.TextureWidth) & (ProceduralTextures.TextureWidth - 1);
 
                 float step = (float)ProceduralTextures.TextureHeight / lineHeight;
-                float texPos = (drawStart - DdaRaycaster.ScreenHeight * 0.5f + lineHeight * 0.5f) * step;
+                float texPos = (drawStart - DdaRaycaster.ScreenHeight * 0.5f - pitchOffset + lineHeight * 0.5f) * step;
 
                 for (int y = drawStart; y < drawEnd; y++)
                 {

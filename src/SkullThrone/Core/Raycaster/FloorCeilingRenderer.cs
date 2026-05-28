@@ -52,11 +52,12 @@ public sealed class FloorCeilingRenderer
         ReadOnlySpan<RayHit> hitBuffer,
         float playerX,
         float playerY,
-        float playerAngle)
+        float playerAngle,
+        int pitchOffset = 0)
     {
         int screenWidth = DdaRaycaster.ScreenWidth;
         int screenHeight = DdaRaycaster.ScreenHeight;
-        int halfHeight = screenHeight / 2;
+        int horizon = screenHeight / 2 + pitchOffset;
 
         float dirX = MathF.Cos(playerAngle);
         float dirY = MathF.Sin(playerAngle);
@@ -71,11 +72,15 @@ public sealed class FloorCeilingRenderer
         int texSize = ProceduralFloorCeilingTextures.TextureSize;
         int texMask = texSize - 1; // Power-of-2 wrap
 
-        // Render floor (bottom half) - scanline by scanline
-        for (int y = halfHeight + 1; y < screenHeight; y++)
+        // Render floor scanlines (below horizon)
+        for (int y = horizon + 1; y < screenHeight; y++)
         {
+            int rowFromHorizon = y - horizon;
+            if (rowFromHorizon <= 0)
+                continue;
+
             // Row distance: distance from camera to the floor point at this scanline
-            float rowDistance = (float)halfHeight / (y - halfHeight);
+            float rowDistance = (float)(screenHeight / 2) / rowFromHorizon;
 
             // Calculate fog factor for this row
             float fogFactor = Math.Min(rowDistance / FogMaxDistance, 1f) * FogMaxIntensity;
@@ -89,15 +94,13 @@ public sealed class FloorCeilingRenderer
             float floorY = playerY + rowDistance * (dirY - planeY);
 
             int rowOffset = y * screenWidth;
-            int ceilingRowOffset = (screenHeight - 1 - y) * screenWidth;
 
             for (int x = 0; x < screenWidth; x++)
             {
                 // Check if this pixel is already a wall
                 ref readonly var hit = ref hitBuffer[x];
                 int lineHeight = WallRenderingCalculations.CalculateLineHeight(hit.PerpDistance);
-                int drawStart = WallRenderingCalculations.CalculateDrawStart(lineHeight);
-                int drawEnd = WallRenderingCalculations.CalculateDrawEnd(lineHeight);
+                int drawEnd = WallRenderingCalculations.CalculateDrawEnd(lineHeight, pitchOffset);
 
                 // Floor pixel (below wall)
                 if (y >= drawEnd)
@@ -108,18 +111,46 @@ public sealed class FloorCeilingRenderer
                     framebuffer[rowOffset + x] = ApplyFog(texel, fogFactor);
                 }
 
-                // Ceiling pixel (mirror row above wall)
-                int mirrorY = screenHeight - 1 - y;
-                if (mirrorY < drawStart)
-                {
-                    int texX = (int)(floorX * texSize) & texMask;
-                    int texY = (int)(floorY * texSize) & texMask;
-                    Color texel = ceilingTex[texY * texSize + texX];
-                    framebuffer[ceilingRowOffset + x] = ApplyFog(texel, fogFactor);
-                }
-
                 floorX += floorStepX;
                 floorY += floorStepY;
+            }
+        }
+
+        // Render ceiling scanlines (above horizon)
+        for (int y = 0; y < horizon; y++)
+        {
+            int rowFromHorizon = horizon - y;
+            if (rowFromHorizon <= 0)
+                continue;
+
+            float rowDistance = (float)(screenHeight / 2) / rowFromHorizon;
+
+            float fogFactor = Math.Min(rowDistance / FogMaxDistance, 1f) * FogMaxIntensity;
+
+            float floorStepX = rowDistance * (dirX + planeX - (dirX - planeX)) / screenWidth;
+            float floorStepY = rowDistance * (dirY + planeY - (dirY - planeY)) / screenWidth;
+
+            float ceilX = playerX + rowDistance * (dirX - planeX);
+            float ceilY = playerY + rowDistance * (dirY - planeY);
+
+            int rowOffset = y * screenWidth;
+
+            for (int x = 0; x < screenWidth; x++)
+            {
+                ref readonly var hit = ref hitBuffer[x];
+                int lineHeight = WallRenderingCalculations.CalculateLineHeight(hit.PerpDistance);
+                int drawStart = WallRenderingCalculations.CalculateDrawStart(lineHeight, pitchOffset);
+
+                if (y < drawStart)
+                {
+                    int texX = (int)(ceilX * texSize) & texMask;
+                    int texY = (int)(ceilY * texSize) & texMask;
+                    Color texel = ceilingTex[texY * texSize + texX];
+                    framebuffer[rowOffset + x] = ApplyFog(texel, fogFactor);
+                }
+
+                ceilX += floorStepX;
+                ceilY += floorStepY;
             }
         }
     }
