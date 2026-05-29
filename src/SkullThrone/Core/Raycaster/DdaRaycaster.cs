@@ -14,6 +14,9 @@ public sealed class DdaRaycaster
     /// <summary>Maximum ray march steps. Matches the expected maximum map dimension.</summary>
     public const int MaxRayDistance = 64;
 
+    /// <summary>Tile ID that represents a portal wall in the map grid.</summary>
+    public const int PortalTileId = 999;
+
     private readonly RayHit[] _hitBuffer = new RayHit[ScreenWidth];
 
     /// <summary>
@@ -132,7 +135,10 @@ public sealed class DdaRaycaster
                     PerpDistance = perpDist,
                     IsVerticalSide = isVerticalSide,
                     TextureId = tileValue,
-                    WallX = wallX
+                    WallX = wallX,
+                    IsPortal = tileValue == PortalTileId,
+                    MapX = mapX,
+                    MapY = mapY
                 };
             }
         }

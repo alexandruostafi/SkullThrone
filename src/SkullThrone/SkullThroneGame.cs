@@ -3,6 +3,7 @@ namespace SkullThrone;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using SkullThrone.Core.Physics;
 using SkullThrone.Core.Raycaster;
 using SkullThrone.Game.Entities;
 using SkullThrone.Game.Levels;
@@ -28,6 +29,7 @@ public sealed class SkullThroneGame : XnaGame
     private WallRenderer _wallRenderer = null!;
     private MapData _map = null!;
     private Player _player = null!;
+    private PortalTeleporter _portalTeleporter = null!;
 
     public SkullThroneGame()
     {
@@ -45,7 +47,8 @@ public sealed class SkullThroneGame : XnaGame
 
         _raycaster = new DdaRaycaster();
         _map = MapData.CreateTestMap();
-        _player = new Player(8f, 8f, 0f);
+        _player = new Player(4f, 8f, 0f);
+        _portalTeleporter = new PortalTeleporter();
 
         base.Initialize();
     }
@@ -101,11 +104,18 @@ public sealed class SkullThroneGame : XnaGame
             moveY += dirX * MoveSpeed * deltaTime;
         }
 
-        // Simple collision: check X and Y separately for wall sliding
-        if (_map.GetTile((int)(_player.X + moveX), (int)_player.Y) == 0)
-            _player.X += moveX;
-        if (_map.GetTile((int)_player.X, (int)(_player.Y + moveY)) == 0)
-            _player.Y += moveY;
+        // Portal cooldown tick (always, even when player is stationary)
+        _portalTeleporter.Update(deltaTime);
+
+        // Portal teleportation check (before standard collision)
+        if (!_portalTeleporter.TryTeleport(_player, moveX, moveY, _map))
+        {
+            // Simple collision: check X and Y separately for wall sliding
+            if (_map.GetTile((int)(_player.X + moveX), (int)_player.Y) == 0)
+                _player.X += moveX;
+            if (_map.GetTile((int)_player.X, (int)(_player.Y + moveY)) == 0)
+                _player.Y += moveY;
+        }
 
         // Cast rays (computation, not rendering)
         _raycaster.CastAllRays(_player.X, _player.Y, _player.Angle, _map.Tiles, _map.Width, _map.Height);
@@ -119,7 +129,7 @@ public sealed class SkullThroneGame : XnaGame
 
         _spriteBatch.Begin(samplerState: SamplerState.PointClamp);
         var destinationRect = CalculateLetterboxRect();
-        _wallRenderer.Draw(_spriteBatch, _raycaster.HitBuffer, destinationRect, _player.X, _player.Y, _player.Angle, _player.Pitch);
+        _wallRenderer.Draw(_spriteBatch, _raycaster.HitBuffer, destinationRect, _player.X, _player.Y, _player.Angle, _player.Pitch, _map);
         _spriteBatch.End();
 
         base.Draw(gameTime);

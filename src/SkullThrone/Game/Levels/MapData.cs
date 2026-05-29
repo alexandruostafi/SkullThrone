@@ -3,15 +3,16 @@ namespace SkullThrone.Game.Levels;
 /// <summary>
 /// Represents the tile grid data for a game level.
 /// Tiles are stored as a flat array in row-major order (y * Width + x).
-/// Values: 0 = empty space, 1+ = wall texture ID.
+/// Values: 0 = empty space, 1+ = wall texture ID, 999 = portal wall.
 /// </summary>
 public sealed class MapData
 {
     public int Width { get; }
     public int Height { get; }
     public int[] Tiles { get; }
+    public PortalData[] Portals { get; }
 
-    public MapData(int width, int height, int[] tiles)
+    public MapData(int width, int height, int[] tiles, PortalData[]? portals = null)
     {
         if (width < 0)
             throw new ArgumentOutOfRangeException(nameof(width), "Width must be non-negative.");
@@ -23,6 +24,9 @@ public sealed class MapData
         Width = width;
         Height = height;
         Tiles = tiles;
+        Portals = portals ?? [];
+
+        ValidatePortals();
     }
 
     public int GetTile(int x, int y)
@@ -34,7 +38,46 @@ public sealed class MapData
     }
 
     /// <summary>
+    /// Returns true if the tile at (x, y) is a portal wall.
+    /// </summary>
+    public bool IsPortalTile(int x, int y)
+    {
+        return GetTile(x, y) == PortalConstants.PortalTileId;
+    }
+
+    /// <summary>
+    /// Finds the portal definition that has an endpoint at (tileX, tileY).
+    /// Returns null if no portal exists at that location.
+    /// O(n) linear scan — acceptable for expected portal counts (typically &lt;10 per map).
+    /// </summary>
+    public PortalData? GetPortalAt(int tileX, int tileY)
+    {
+        for (int i = 0; i < Portals.Length; i++)
+        {
+            var portal = Portals[i];
+            if ((portal.TileA.X == tileX && portal.TileA.Y == tileY) ||
+                (portal.TileB.X == tileX && portal.TileB.Y == tileY))
+            {
+                return portal;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Gets the portal color for the portal at (tileX, tileY).
+    /// Returns null if no portal exists at that location.
+    /// </summary>
+    public string? GetPortalColor(int tileX, int tileY)
+    {
+        return GetPortalAt(tileX, tileY)?.Color;
+    }
+
+    /// <summary>
     /// Creates a simple test map for development purposes.
+    /// Features an open room with two portal-bearing wall segments for testing
+    /// bidirectional teleportation.
     /// </summary>
     public static MapData CreateTestMap()
     {
@@ -50,22 +93,76 @@ public sealed class MapData
                 {
                     tiles[y * size + x] = 1;
                 }
-                // Some interior walls for interest
-                else if (x == 5 && y >= 2 && y <= 6)
-                {
-                    tiles[y * size + x] = 2;
-                }
-                else if (x >= 8 && x <= 12 && y == 4)
-                {
-                    tiles[y * size + x] = 3;
-                }
-                else if (x == 10 && y >= 8 && y <= 12)
-                {
-                    tiles[y * size + x] = 4;
-                }
             }
         }
 
-        return new MapData(size, size, tiles);
+        // Wall segment on the left side hosting Portal A (player can see from spawn)
+        tiles[4 * size + 5] = 2;
+        tiles[5 * size + 5] = PortalConstants.PortalTileId; // Portal A at (5, 5)
+        tiles[6 * size + 5] = 2;
+
+        // Wall segment on the right side hosting Portal B (visible from open room)
+        tiles[10 * size + 12] = 2;
+        tiles[11 * size + 12] = PortalConstants.PortalTileId; // Portal B at (12, 11)
+        tiles[12 * size + 12] = 2;
+
+        var portals = new[]
+        {
+            new PortalData(
+                "portal_1",
+                new PortalEndpoint { X = 5, Y = 5, Face = PortalFace.East },
+                new PortalEndpoint { X = 12, Y = 11, Face = PortalFace.West },
+                "green")
+        };
+
+        return new MapData(size, size, tiles, portals);
+    }
+
+    private void ValidatePortals()
+    {
+        for (int i = 0; i < Portals.Length; i++)
+        {
+            var portal = Portals[i];
+            ValidatePortalEndpoint(portal, portal.TileA, "TileA");
+            ValidatePortalEndpoint(portal, portal.TileB, "TileB");
+        }
+    }
+
+    private void ValidatePortalEndpoint(PortalData portal, PortalEndpoint endpoint, string endpointName)
+    {
+        // Ensure the portal tile is actually marked as a portal in the grid
+        if (GetTile(endpoint.X, endpoint.Y) != PortalConstants.PortalTileId)
+        {
+            throw new InvalidOperationException(
+                $"Portal '{portal.Id}' {endpointName} at ({endpoint.X}, {endpoint.Y}) " +
+                $"must be tile {PortalConstants.PortalTileId} but found {GetTile(endpoint.X, endpoint.Y)}.");
+        }
+
+        // Ensure the exit tile (one step in face direction) is empty
+        GetFaceOffset(endpoint.Face, out int dx, out int dy);
+        int exitX = endpoint.X + dx;
+        int exitY = endpoint.Y + dy;
+
+        if (GetTile(exitX, exitY) != 0)
+        {
+            throw new InvalidOperationException(
+                $"Portal '{portal.Id}' {endpointName} face direction '{endpoint.Face}' " +
+                $"points to non-empty tile at ({exitX}, {exitY}). Exit tile must be empty.");
+        }
+    }
+
+    /// <summary>
+    /// Gets the X/Y offset for a given portal face direction.
+    /// </summary>
+    public static void GetFaceOffset(PortalFace face, out int dx, out int dy)
+    {
+        (dx, dy) = face switch
+        {
+            PortalFace.North => (0, -1),
+            PortalFace.South => (0, 1),
+            PortalFace.East => (1, 0),
+            PortalFace.West => (-1, 0),
+            _ => (0, 0)
+        };
     }
 }

@@ -3,6 +3,7 @@ namespace SkullThrone.Core.Raycaster;
 using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using SkullThrone.Game.Levels;
 
 /// <summary>
 /// Renders textured wall strips to the screen based on raycaster hit results.
@@ -15,6 +16,7 @@ public sealed class WallRenderer : IDisposable
     private readonly Color[][] _textureData;
     private readonly Color[][] _textureDataDark;
     private readonly FloorCeilingRenderer _floorCeilingRenderer;
+    private readonly PortalRenderer _portalRenderer = new();
 
     /// <summary>
     /// Initializes the wall renderer, generating procedural textures and pre-computing
@@ -75,9 +77,10 @@ public sealed class WallRenderer : IDisposable
     /// <summary>
     /// Draws wall columns from the raycaster hit buffer with textured floor/ceiling.
     /// </summary>
-    public void Draw(SpriteBatch spriteBatch, ReadOnlySpan<RayHit> hitBuffer, Rectangle destinationRect, float playerX, float playerY, float playerAngle, int pitchOffset = 0)
+    public void Draw(SpriteBatch spriteBatch, ReadOnlySpan<RayHit> hitBuffer, Rectangle destinationRect, float playerX, float playerY, float playerAngle, int pitchOffset = 0, MapData? map = null)
     {
-        RenderToFramebuffer(hitBuffer, pitchOffset);
+        _portalRenderer.Update();
+        RenderToFramebuffer(hitBuffer, pitchOffset, map);
         _floorCeilingRenderer.Render(_framebuffer, hitBuffer, playerX, playerY, playerAngle, pitchOffset);
 
         _framebufferTexture.SetData(_framebuffer);
@@ -93,20 +96,45 @@ public sealed class WallRenderer : IDisposable
         _framebufferTexture.Dispose();
     }
 
-    private void RenderToFramebuffer(ReadOnlySpan<RayHit> hitBuffer, int pitchOffset = 0)
+    private void RenderToFramebuffer(ReadOnlySpan<RayHit> hitBuffer, int pitchOffset, MapData? map)
     {
-        RenderToFramebuffer(hitBuffer, _framebuffer, _textureData, _textureDataDark, pitchOffset);
+        for (int column = 0; column < DdaRaycaster.ScreenWidth; column++)
+        {
+            ref readonly var hit = ref hitBuffer[column];
+
+            int lineHeight = WallRenderingCalculations.CalculateLineHeight(hit.PerpDistance);
+            int drawStart = WallRenderingCalculations.CalculateDrawStart(lineHeight, pitchOffset);
+            int drawEnd = WallRenderingCalculations.CalculateDrawEnd(lineHeight, pitchOffset);
+
+            if (hit.IsPortal)
+            {
+                string? portalColor = map?.GetPortalColor(hit.MapX, hit.MapY);
+                _portalRenderer.RenderColumn(_framebuffer, column, drawStart, drawEnd, hit.WallX, portalColor);
+            }
+            else if (hit.TextureId != 0 && hit.TextureId < _textureData.Length && _textureData[hit.TextureId].Length > 0)
+            {
+                Color[] texData = hit.IsVerticalSide ? _textureData[hit.TextureId] : _textureDataDark[hit.TextureId];
+                int texX = (int)(hit.WallX * ProceduralTextures.TextureWidth) & (ProceduralTextures.TextureWidth - 1);
+
+                float step = (float)ProceduralTextures.TextureHeight / lineHeight;
+                float texPos = (drawStart - DdaRaycaster.ScreenHeight * 0.5f - pitchOffset + lineHeight * 0.5f) * step;
+
+                for (int y = drawStart; y < drawEnd; y++)
+                {
+                    int texY = (int)texPos & (ProceduralTextures.TextureHeight - 1);
+                    texPos += step;
+                    _framebuffer[y * DdaRaycaster.ScreenWidth + column] = texData[texY * ProceduralTextures.TextureWidth + texX];
+                }
+            }
+        }
     }
 
     /// <summary>
     /// Renders wall columns into a framebuffer array. Floor/ceiling pixels are left
     /// unwritten here — they are filled by <see cref="FloorCeilingRenderer"/>.
+    /// Note: Portal tiles are skipped in this static overload (used by tests only).
+    /// Use the instance <see cref="RenderToFramebuffer(ReadOnlySpan{RayHit}, int, MapData?)"/> for portal support.
     /// </summary>
-    /// <param name="hitBuffer">Raycaster hit results per column.</param>
-    /// <param name="framebuffer">Pixel buffer to write into.</param>
-    /// <param name="textureData">NS-facing wall texture data.</param>
-    /// <param name="textureDataDark">EW-facing (darkened) wall texture data.</param>
-    /// <param name="pitchOffset">Y-shearing offset in pixels (positive = looking up).</param>
     internal static void RenderToFramebuffer(
         ReadOnlySpan<RayHit> hitBuffer,
         Color[] framebuffer,
@@ -122,7 +150,7 @@ public sealed class WallRenderer : IDisposable
             int drawStart = WallRenderingCalculations.CalculateDrawStart(lineHeight, pitchOffset);
             int drawEnd = WallRenderingCalculations.CalculateDrawEnd(lineHeight, pitchOffset);
 
-            // Wall - texture-mapped
+            // Wall - texture-mapped (portals not handled in static method)
             if (hit.TextureId != 0 && hit.TextureId < textureData.Length && textureData[hit.TextureId].Length > 0)
             {
                 Color[] texData = hit.IsVerticalSide ? textureData[hit.TextureId] : textureDataDark[hit.TextureId];
