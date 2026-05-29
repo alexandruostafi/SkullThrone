@@ -37,10 +37,19 @@ A retro first-person shooter inspired by DOOM and Wolfenstein 3D, built from scr
 ### Build & Run
 
 ```bash
+dotnet tool restore
 dotnet restore
 dotnet build
 dotnet run --project src/SkullThrone
 ```
+
+### Font Setup
+
+The game uses **[Press Start 2P](https://fonts.google.com/specimen/Press+Start+2P)** — a free blocky pixel font (SIL Open Font License).
+
+1. Download from [Google Fonts](https://fonts.google.com/specimen/Press+Start+2P)
+2. Extract `PressStart2P-Regular.ttf`
+3. Place it at: `src/SkullThrone/Content/Fonts/PressStart2P-Regular.ttf`
 
 ## Project Structure
 
@@ -65,4 +74,4 @@ This is a personal hobby project. Not accepting contributions at this time.
 
 ## License
 
-TBD
+TBD — **Press Start 2P** font is licensed under the [SIL Open Font License](https://scripts.sil.org/OFL).
