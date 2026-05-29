@@ -1,3 +1,9 @@
+## [0.9.0](https://github.com/alexandruostafi/SkullThrone/compare/v0.8.0...v0.9.0) (2026-05-29)
+
+### Features
+
+* implement window rescaling ([b8f111f](https://github.com/alexandruostafi/SkullThrone/commit/b8f111fd0b75e7fadf97960ec27dbf1442fd6d04))
+
 ## [0.8.0](https://github.com/alexandruostafi/SkullThrone/compare/v0.7.0...v0.8.0) (2026-05-29)
 
 ### Features
