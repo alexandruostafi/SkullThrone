@@ -24,6 +24,8 @@ public sealed class SkullThroneGame : XnaGame
 
     private readonly GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch = null!;
+    private KeyboardState _previousKeyState;
+    private bool _skipMouseFrame;
 
     private DdaRaycaster _raycaster = null!;
     private WallRenderer _wallRenderer = null!;
@@ -33,7 +35,10 @@ public sealed class SkullThroneGame : XnaGame
 
     public SkullThroneGame()
     {
-        _graphics = new GraphicsDeviceManager(this);
+        _graphics = new GraphicsDeviceManager(this)
+        {
+            HardwareModeSwitch = false
+        };
         Content.RootDirectory = "Content";
         IsMouseVisible = false;
         Window.AllowUserResizing = true;
@@ -67,14 +72,27 @@ public sealed class SkullThroneGame : XnaGame
         if (keyState.IsKeyDown(Keys.Escape))
             Exit();
 
+        // F11 toggles borderless fullscreen
+        if (keyState.IsKeyDown(Keys.F11) && _previousKeyState.IsKeyUp(Keys.F11))
+            ToggleFullscreen();
+
         // Mouse look
         var mouseState = Mouse.GetState();
-        int centerX = _graphics.PreferredBackBufferWidth / 2;
-        int centerY = _graphics.PreferredBackBufferHeight / 2;
-        int mouseDeltaX = mouseState.X - centerX;
-        int mouseDeltaY = mouseState.Y - centerY;
-        _player.Angle += mouseDeltaX * MouseSensitivity;
-        _player.Pitch -= (int)(mouseDeltaY * VerticalMouseSensitivity);
+        int centerX = GraphicsDevice.PresentationParameters.BackBufferWidth / 2;
+        int centerY = GraphicsDevice.PresentationParameters.BackBufferHeight / 2;
+
+        if (_skipMouseFrame)
+        {
+            _skipMouseFrame = false;
+        }
+        else
+        {
+            int mouseDeltaX = mouseState.X - centerX;
+            int mouseDeltaY = mouseState.Y - centerY;
+            _player.Angle += mouseDeltaX * MouseSensitivity;
+            _player.Pitch -= (int)(mouseDeltaY * VerticalMouseSensitivity);
+        }
+
         Mouse.SetPosition(centerX, centerY);
 
         // Movement
@@ -120,6 +138,7 @@ public sealed class SkullThroneGame : XnaGame
         // Cast rays (computation, not rendering)
         _raycaster.CastAllRays(_player.X, _player.Y, _player.Angle, _map.Tiles, _map.Width, _map.Height);
 
+        _previousKeyState = keyState;
         base.Update(gameTime);
     }
 
@@ -135,11 +154,27 @@ public sealed class SkullThroneGame : XnaGame
         base.Draw(gameTime);
     }
 
+    private void ToggleFullscreen()
+    {
+        _graphics.IsFullScreen = !_graphics.IsFullScreen;
+        _graphics.ApplyChanges();
+        _skipMouseFrame = true;
+    }
+
     private Rectangle CalculateLetterboxRect()
     {
         var windowWidth = GraphicsDevice.PresentationParameters.BackBufferWidth;
         var windowHeight = GraphicsDevice.PresentationParameters.BackBufferHeight;
 
+        return CalculateLetterboxRect(windowWidth, windowHeight);
+    }
+
+    /// <summary>
+    /// Calculates the destination rectangle that preserves the logical aspect ratio
+    /// within the given window dimensions, centering with letterbox/pillarbox margins.
+    /// </summary>
+    internal static Rectangle CalculateLetterboxRect(int windowWidth, int windowHeight)
+    {
         var scale = Math.Min(
             (float)windowWidth / LogicalWidth,
             (float)windowHeight / LogicalHeight);
