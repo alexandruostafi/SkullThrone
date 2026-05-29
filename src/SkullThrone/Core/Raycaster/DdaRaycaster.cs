@@ -1,6 +1,7 @@
 namespace SkullThrone.Core.Raycaster;
 
 using System;
+using SkullThrone.Game.Levels;
 
 /// <summary>
 /// Performs grid-based raycasting using the Digital Differential Analyzer (DDA) algorithm.
@@ -132,7 +133,10 @@ public sealed class DdaRaycaster
                     PerpDistance = perpDist,
                     IsVerticalSide = isVerticalSide,
                     TextureId = tileValue,
-                    WallX = wallX
+                    WallX = wallX,
+                    IsPortal = tileValue == PortalConstants.PortalTileId,
+                    MapX = mapX,
+                    MapY = mapY
                 };
             }
         }

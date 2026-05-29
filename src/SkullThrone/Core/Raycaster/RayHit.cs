@@ -16,4 +16,13 @@ public readonly struct RayHit
 
     /// <summary>Fractional X coordinate along the wall face (0.0–1.0) for texture mapping.</summary>
     public float WallX { get; init; }
+
+    /// <summary>Whether the hit tile is a portal wall.</summary>
+    public bool IsPortal { get; init; }
+
+    /// <summary>Map X coordinate of the hit tile (for portal color lookup).</summary>
+    public int MapX { get; init; }
+
+    /// <summary>Map Y coordinate of the hit tile (for portal color lookup).</summary>
+    public int MapY { get; init; }
 }
