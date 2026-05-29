@@ -19,36 +19,59 @@ public sealed class PortalTeleporter
     public bool IsOnCooldown => _cooldownRemaining > 0f;
 
     /// <summary>
+    /// Ticks the cooldown timer. Must be called every frame unconditionally.
+    /// </summary>
+    public void Update(float deltaTime)
+    {
+        if (_cooldownRemaining > 0f)
+            _cooldownRemaining -= deltaTime;
+    }
+
+    /// <summary>
     /// Attempts to teleport the player if they are moving into a portal tile.
     /// Should be called after movement intent is calculated but before final position is applied.
+    /// Call <see cref="Update"/> before this method each frame.
     /// </summary>
     /// <param name="player">The player entity.</param>
     /// <param name="moveX">Intended X movement delta.</param>
     /// <param name="moveY">Intended Y movement delta.</param>
     /// <param name="map">The current map data.</param>
-    /// <param name="deltaTime">Frame time in seconds.</param>
     /// <returns>True if teleportation occurred, false otherwise.</returns>
-    public bool TryTeleport(Player player, float moveX, float moveY, MapData map, float deltaTime)
+    public bool TryTeleport(Player player, float moveX, float moveY, MapData map)
     {
-        // Tick cooldown
         if (_cooldownRemaining > 0f)
-        {
-            _cooldownRemaining -= deltaTime;
             return false;
+
+        // Check X-axis portal collision (matching the per-axis collision approach)
+        int targetTileX = (int)(player.X + moveX);
+        int currentTileY = (int)player.Y;
+
+        if (map.IsPortalTile(targetTileX, currentTileY))
+        {
+            if (TeleportTo(player, targetTileX, currentTileY, map))
+                return true;
         }
 
-        // Check if player is trying to move into a portal tile
-        int targetTileX = (int)(player.X + moveX);
+        // Check Y-axis portal collision
+        int currentTileX = (int)player.X;
         int targetTileY = (int)(player.Y + moveY);
 
-        if (!map.IsPortalTile(targetTileX, targetTileY))
-            return false;
+        if (map.IsPortalTile(currentTileX, targetTileY))
+        {
+            if (TeleportTo(player, currentTileX, targetTileY, map))
+                return true;
+        }
 
-        var portal = map.GetPortalAt(targetTileX, targetTileY);
+        return false;
+    }
+
+    private bool TeleportTo(Player player, int portalTileX, int portalTileY, MapData map)
+    {
+        var portal = map.GetPortalAt(portalTileX, portalTileY);
         if (portal is null)
             return false;
 
-        var destination = portal.GetDestination(targetTileX, targetTileY);
+        var destination = portal.GetDestination(portalTileX, portalTileY);
         if (destination is null)
             return false;
 

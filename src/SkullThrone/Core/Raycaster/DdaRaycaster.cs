@@ -1,7 +1,6 @@
 namespace SkullThrone.Core.Raycaster;
 
 using System;
-using SkullThrone.Game.Levels;
 
 /// <summary>
 /// Performs grid-based raycasting using the Digital Differential Analyzer (DDA) algorithm.
@@ -14,6 +13,9 @@ public sealed class DdaRaycaster
     public const float FieldOfView = MathF.PI / 3f; // 60 degrees
     /// <summary>Maximum ray march steps. Matches the expected maximum map dimension.</summary>
     public const int MaxRayDistance = 64;
+
+    /// <summary>Tile ID that represents a portal wall in the map grid.</summary>
+    public const int PortalTileId = 999;
 
     private readonly RayHit[] _hitBuffer = new RayHit[ScreenWidth];
 
@@ -134,7 +136,7 @@ public sealed class DdaRaycaster
                     IsVerticalSide = isVerticalSide,
                     TextureId = tileValue,
                     WallX = wallX,
-                    IsPortal = tileValue == PortalConstants.PortalTileId,
+                    IsPortal = tileValue == PortalTileId,
                     MapX = mapX,
                     MapY = mapY
                 };

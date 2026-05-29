@@ -104,8 +104,11 @@ public sealed class SkullThroneGame : XnaGame
             moveY += dirX * MoveSpeed * deltaTime;
         }
 
+        // Portal cooldown tick (always, even when player is stationary)
+        _portalTeleporter.Update(deltaTime);
+
         // Portal teleportation check (before standard collision)
-        if (!_portalTeleporter.TryTeleport(_player, moveX, moveY, _map, deltaTime))
+        if (!_portalTeleporter.TryTeleport(_player, moveX, moveY, _map))
         {
             // Simple collision: check X and Y separately for wall sliding
             if (_map.GetTile((int)(_player.X + moveX), (int)_player.Y) == 0)

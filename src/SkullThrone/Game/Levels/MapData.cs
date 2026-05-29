@@ -48,6 +48,7 @@ public sealed class MapData
     /// <summary>
     /// Finds the portal definition that has an endpoint at (tileX, tileY).
     /// Returns null if no portal exists at that location.
+    /// O(n) linear scan — acceptable for expected portal counts (typically &lt;10 per map).
     /// </summary>
     public PortalData? GetPortalAt(int tileX, int tileY)
     {
@@ -75,7 +76,8 @@ public sealed class MapData
 
     /// <summary>
     /// Creates a simple test map for development purposes.
-    /// Includes two sectors separated by walls with a portal connection.
+    /// Features an open room with two portal-bearing wall segments for testing
+    /// bidirectional teleportation.
     /// </summary>
     public static MapData CreateTestMap()
     {
@@ -91,27 +93,25 @@ public sealed class MapData
                 {
                     tiles[y * size + x] = 1;
                 }
-                // Dividing wall splitting map into two sectors (left and right)
-                else if (x == 8 && y >= 1 && y <= 14)
-                {
-                    tiles[y * size + x] = 2;
-                }
             }
         }
 
-        // Place portal tiles on the dividing wall
-        tiles[7 * size + 8] = PortalConstants.PortalTileId; // Portal A at (8, 7)
+        // Wall segment on the left side hosting Portal A (player can see from spawn)
+        tiles[4 * size + 5] = 2;
+        tiles[5 * size + 5] = PortalConstants.PortalTileId; // Portal A at (5, 5)
+        tiles[6 * size + 5] = 2;
 
-        // Place destination portal on the right sector's east border (inner wall)
-        // Add a small interior wall in right sector for the destination
-        tiles[12 * size + 12] = PortalConstants.PortalTileId; // Portal B at (12, 12)
+        // Wall segment on the right side hosting Portal B (visible from open room)
+        tiles[10 * size + 12] = 2;
+        tiles[11 * size + 12] = PortalConstants.PortalTileId; // Portal B at (12, 11)
+        tiles[12 * size + 12] = 2;
 
         var portals = new[]
         {
             new PortalData(
                 "portal_1",
-                new PortalEndpoint { X = 8, Y = 7, Face = PortalFace.East },
-                new PortalEndpoint { X = 12, Y = 12, Face = PortalFace.West },
+                new PortalEndpoint { X = 5, Y = 5, Face = PortalFace.East },
+                new PortalEndpoint { X = 12, Y = 11, Face = PortalFace.West },
                 "green")
         };
 
