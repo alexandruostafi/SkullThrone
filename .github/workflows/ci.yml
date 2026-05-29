@@ -21,7 +21,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install commitlint
         run: npm install --save-dev @commitlint/cli @commitlint/config-conventional
@@ -66,6 +66,12 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
+      - name: Restore tools
+        run: dotnet tool restore
+
+      - name: Download font
+        run: Invoke-WebRequest -Uri "https://github.com/google/fonts/raw/main/ofl/pressstart2p/PressStart2P-Regular.ttf" -OutFile "src/SkullThrone/Content/Fonts/PressStart2P-Regular.ttf"
+
       - name: Build
         run: dotnet build --no-restore --configuration Release /p:TreatWarningsAsErrors=true
 
@@ -85,7 +91,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install semantic-release
         run: npm install semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/github conventional-changelog-conventionalcommits
