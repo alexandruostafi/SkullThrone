@@ -1,3 +1,10 @@
+## [0.8.0](https://github.com/alexandruostafi/SkullThrone/compare/v0.7.0...v0.8.0) (2026-05-29)
+
+### Features
+
+* portal system wall-tile teleporters between grid sectors ([f31cbfe](https://github.com/alexandruostafi/SkullThrone/commit/f31cbfe5c7bb0658dd25d3cd62d61ae8d35afd46))
+* remove false statements for commit verb validation ([b52f3d5](https://github.com/alexandruostafi/SkullThrone/commit/b52f3d5c4df87a02092aff5094774acba78f9ad9))
+
 ## [0.7.0](https://github.com/alexandruostafi/SkullThrone/compare/v0.6.0...v0.7.0) (2026-05-28)
 
 ### Features
