@@ -2,7 +2,6 @@ namespace SkullThrone.Core.Raycaster;
 
 using System;
 using Microsoft.Xna.Framework;
-using SkullThrone.Game.Levels;
 
 /// <summary>
 /// Renders portal wall columns as a circular portal shape with flat color fill
@@ -38,7 +37,7 @@ public sealed class PortalRenderer
     /// </summary>
     public void Update()
     {
-        _frameCounter++;
+        unchecked { _frameCounter++; }
     }
 
     /// <summary>

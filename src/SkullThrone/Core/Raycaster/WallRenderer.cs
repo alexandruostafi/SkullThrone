@@ -17,7 +17,6 @@ public sealed class WallRenderer : IDisposable
     private readonly Color[][] _textureDataDark;
     private readonly FloorCeilingRenderer _floorCeilingRenderer;
     private readonly PortalRenderer _portalRenderer = new();
-    private MapData? _currentMap;
 
     /// <summary>
     /// Initializes the wall renderer, generating procedural textures and pre-computing
@@ -80,9 +79,8 @@ public sealed class WallRenderer : IDisposable
     /// </summary>
     public void Draw(SpriteBatch spriteBatch, ReadOnlySpan<RayHit> hitBuffer, Rectangle destinationRect, float playerX, float playerY, float playerAngle, int pitchOffset = 0, MapData? map = null)
     {
-        _currentMap = map;
         _portalRenderer.Update();
-        RenderToFramebuffer(hitBuffer, pitchOffset);
+        RenderToFramebuffer(hitBuffer, pitchOffset, map);
         _floorCeilingRenderer.Render(_framebuffer, hitBuffer, playerX, playerY, playerAngle, pitchOffset);
 
         _framebufferTexture.SetData(_framebuffer);
@@ -98,7 +96,7 @@ public sealed class WallRenderer : IDisposable
         _framebufferTexture.Dispose();
     }
 
-    private void RenderToFramebuffer(ReadOnlySpan<RayHit> hitBuffer, int pitchOffset = 0)
+    private void RenderToFramebuffer(ReadOnlySpan<RayHit> hitBuffer, int pitchOffset, MapData? map)
     {
         for (int column = 0; column < DdaRaycaster.ScreenWidth; column++)
         {
@@ -110,7 +108,7 @@ public sealed class WallRenderer : IDisposable
 
             if (hit.IsPortal)
             {
-                string? portalColor = _currentMap?.GetPortalColor(hit.MapX, hit.MapY);
+                string? portalColor = map?.GetPortalColor(hit.MapX, hit.MapY);
                 _portalRenderer.RenderColumn(_framebuffer, column, drawStart, drawEnd, hit.WallX, portalColor);
             }
             else if (hit.TextureId != 0 && hit.TextureId < _textureData.Length && _textureData[hit.TextureId].Length > 0)
@@ -134,6 +132,8 @@ public sealed class WallRenderer : IDisposable
     /// <summary>
     /// Renders wall columns into a framebuffer array. Floor/ceiling pixels are left
     /// unwritten here — they are filled by <see cref="FloorCeilingRenderer"/>.
+    /// Note: Portal tiles are skipped in this static overload (used by tests only).
+    /// Use the instance <see cref="RenderToFramebuffer(ReadOnlySpan{RayHit}, int, MapData?)"/> for portal support.
     /// </summary>
     internal static void RenderToFramebuffer(
         ReadOnlySpan<RayHit> hitBuffer,
